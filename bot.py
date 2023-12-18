@@ -27,6 +27,10 @@ MAIN_MENU, SUBMIT_READINGS, METER_INFO, CONTACT_INFO  = range(4)
 
 
 def handle_start(update: Update, context: CallbackContext) -> int:
+    """
+    TODO: привязку к id пользователя ( бот же должаен помнить счета конкретного юзера)
+
+    """
     # Если бот уже запущен
     if context.user_data.get('has_started', False):
         # Бот уже запущен, не выдаём HELLO
