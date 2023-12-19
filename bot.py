@@ -167,12 +167,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
     
 
 def get_contact_info(update: Update, context: CallbackContext) -> int:
-    """
-    TODO:
-        - При нажатии определенной цифры на предложенной клавиатуре возвращает информацию об отделении.
-            ( цифра - запрос к словарю)
 
-    """
     global prev_department
     logger.info("Контакты и режим работы")
     text = update.message.text
@@ -198,6 +193,7 @@ def get_contact_info(update: Update, context: CallbackContext) -> int:
                 department.general,
                 reply_markup=choose_address_keyboard(addresses)
             )
+            update.message.reply_text("Выберите номер удобного для Вас МРО в меню снизу")
             return CONTACT_INFO
         else:
             update.message.reply_text(
