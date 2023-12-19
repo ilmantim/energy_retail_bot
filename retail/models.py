@@ -51,7 +51,6 @@ class Customer(models.Model):
     )
 
 
-
 class Bill(models.Model):
     customers = models.ManyToManyField(
         Customer,
@@ -61,6 +60,11 @@ class Bill(models.Model):
     )
     value = models.IntegerField(
         'номер лицевого счета',
+        null=True,
+        blank=True
+    )
+    address = models.TextField(
+        'адрес счета',
         null=True,
         blank=True
     )

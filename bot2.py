@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
     CallbackContext, ConversationHandler, CallbackQueryHandler
-from retail.models import Mro, Bill, Customer
+from retail.models import Mro
 from datetime import datetime
 from keyboard import yes_or_no_keyboard, yes_and_no_keyboard, \
     go_to_main_menu_keyboard, main_menu_keyboard, \
@@ -30,7 +30,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-MAIN_MENU, SUBMIT_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(6)
+MAIN_MENU, SUBMIT_READINGS, METER_INFO, CONTACT_INFO = range(4)
 
 
 def handle_start(update: Update, context: CallbackContext) -> int:
@@ -118,91 +118,24 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     """
 
     logger.info("Передать показания счётчиков")
-    bills = Bill.objects.all()
     text = update.message.text
-    user, is_found = Customer.objects.get_or_create(chat_id=update.effective_chat.id)
-    context.user_data['chat_id'] = user.chat_id
-    if text.isdigit() and bills.filter(value=int(text)).exists():
-        context.user_data['bill_num'] = text
-        bill_here = bills.get(value=int(text))
-        message = f'Адрес объекта - {bill_here.address}?'
-        update.message.reply_text(message,
-                                  reply_markup=yes_or_no_keyboard())
-        return YES_OR_NO_ADDRESS
-
 
     if text == "В главное меню":
         return handle_start(update, context)
 
     elif text == "Как узнать лицевой счёт":
-        update.message.reply_text(
-            "Лицевой счёт указан в верхней части квитанции (извещение) рядом "
-            "с Вашей фамилией \n Введите лицевой счет:",
-            reply_markup=submit_readnigs_and_get_meter_keyboard())
+        update.message.reply_text("Лицевой счёт указан в верхней части квитанции (извещение) рядом с Вашей фамилией")
+        update.message.reply_text("Введите лицевой счет", reply_markup=submit_readnigs_and_get_meter_keyboard())
         return SUBMIT_READINGS
 
     today = datetime.now()
     if 15 <= today.day <= 25:
-        user_here = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
-        if user_here.bills.count() > 0:
-            bills_here = user_here.bills.all()
-            info = [[bill.value] for bill in bills_here]
-        else:
-            info = None
-        update.message.reply_text("Введите лицевой счёт", reply_markup=submit_readnigs_and_get_meter_keyboard(info))
+        update.message.reply_text("Введите лицевой счёт", reply_markup=submit_readnigs_and_get_meter_keyboard())
         return SUBMIT_READINGS
     
     else:
         update.message.reply_text("Показания принимаются с 15 по 25 число каждого месяца.")
         return MAIN_MENU
-
-
-def yes_or_no_address(update: Update, context: CallbackContext) -> int:
-    text = update.message.text
-    if text.lower() == 'нет':
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text='Это сообщение вы видите, если ответили, что адрес не тот'
-        )
-        return handle_start(update, context)
-    elif text.lower() == 'да':
-        update.message.reply_text(
-            "Вы хотите добавить этот лицевой счёт в избранное?",
-            reply_markup=yes_or_no_keyboard()
-        )
-        return ADD_TO_FAVORITE
-    else:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text='Это сообщение вы видите, если не ответили да/нет'
-        )
-        return SUBMIT_READINGS
-
-
-def add_to_favorite(update: Update, context: CallbackContext) -> int:
-    text = update.message.text
-    if text.lower() == 'да':
-        bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
-        user_here = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
-        bill_here.customers.add(user_here)
-        update.message.reply_text(
-            'Это сообщение вы видите, если успешно добавили счет в избранное',
-            reply_markup=go_to_main_menu_keyboard()
-        )
-        return SUBMIT_READINGS
-    elif text.lower() == 'нет':
-        update.message.reply_text(
-            'Это сообщение вы видите, решили не добавлять счет в избранное',
-            reply_markup=go_to_main_menu_keyboard()
-        )
-        return MAIN_MENU
-    else:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text='Это сообщение вы видите, если не ответили да/нет'
-        )
-        return SUBMIT_READINGS
-
 
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
@@ -295,8 +228,6 @@ def main() -> None:
         states={
             MAIN_MENU: [MessageHandler(Filters.text & ~Filters.command, handle_main_menu)],
             SUBMIT_READINGS: [MessageHandler(Filters.text & ~Filters.command, submit_readings)],
-            YES_OR_NO_ADDRESS: [MessageHandler(Filters.text & ~Filters.command, yes_or_no_address)],
-            ADD_TO_FAVORITE: [MessageHandler(Filters.text & ~Filters.command, add_to_favorite)],
             METER_INFO: [MessageHandler(Filters.text & ~Filters.command, get_meter_info)],
             CONTACT_INFO: [MessageHandler(Filters.text & ~Filters.command, get_contact_info)],
         },
