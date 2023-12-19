@@ -64,6 +64,10 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
         return get_meter_info(update, context)
     elif text == "Контакты и режим работы":
         return get_contact_info(update, context)
+    elif text == "В главное меню":
+        update.message.reply_text("Выберите раздел.",
+                                  reply_markup=main_menu_keyboard())
+        return MAIN_MENU
     else:
         update.message.reply_text("Не понял команду. Давайте начнем сначала.", reply_markup=main_menu_keyboard())
         return MAIN_MENU
@@ -125,11 +129,18 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     if text.isdigit() and bills.filter(value=int(text)).exists():
         context.user_data['bill_num'] = text
         bill_here = bills.get(value=int(text))
-        message = f'Адрес объекта - {bill_here.address}?'
-        update.message.reply_text(message,
-                                  reply_markup=yes_or_no_keyboard())
-        return YES_OR_NO_ADDRESS
-
+        user_bills = user.bills.all()
+        if user_bills.filter(value=bill_here.value).exists():
+            update.message.reply_text(
+                f'Это сообщение вы видите, если выбрали из избранного \n инфа: \n номер ЛС: {bill_here.value}',
+                reply_markup=go_to_main_menu_keyboard()
+            )
+            return MAIN_MENU
+        else:
+            message = f'Адрес объекта - {bill_here.address}?'
+            update.message.reply_text(message,
+                                      reply_markup=yes_or_no_keyboard())
+            return YES_OR_NO_ADDRESS
 
     if text == "В главное меню":
         return handle_start(update, context)
@@ -144,12 +155,17 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     today = datetime.now()
     if 15 <= today.day <= 25:
         user_here = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
-        if user_here.bills.count() > 0:
+        if user_here.bills.count() > 0 and not text == 'Ввести другой':
             bills_here = user_here.bills.all()
             info = [[bill.value] for bill in bills_here]
+            update.message.reply_text("Выберите нужный пункт в меню снизу.",
+                                      reply_markup=submit_readnigs_and_get_meter_keyboard(
+                                          info))
         else:
             info = None
-        update.message.reply_text("Введите лицевой счёт", reply_markup=submit_readnigs_and_get_meter_keyboard(info))
+            update.message.reply_text("Введите лицевой счёт",
+                                      reply_markup=submit_readnigs_and_get_meter_keyboard(
+                                          info))
         return SUBMIT_READINGS
     
     else:
