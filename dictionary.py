@@ -1,7 +1,3 @@
-from keyboard import main_menu_keyboard, choose_MRO_1_2_keyboard,\
-    choose_MRO_1_2_3_keyboard, choose_MRO_1_2_3_4_keyboard
-
-
 cheboksarskoe_mro_info = {
     "general": "1 — 428018, г. Чебоксары, пр. Московский, д.41, корп.1\n"
                "2 — 428022, Чувашская Республика, г. Чебоксары, ул. 50 лет Октября, д. 4, пом. 2\n"
@@ -152,31 +148,4 @@ upravlenie_info = {
                "Телефон: 8 (8352) 36-80-04,\n"
                "Режим работы: ПН-ЧТ 08:00-17:00 (перерыв с 12:00 до 12:45),\n"
                "ПТ 08:00-16:00 (перерыв с 12:00 до 13:00)"
-}
-
-
-mro_mapping = {
-    "Чебоксарское МРО": cheboksarskoe_mro_info,
-    "Алатырское МРО": alatyrskoe_mro_info,
-    "Батыревское МРО": batyrevo_mro_info,
-    "Канашское МРО": kanashskoe_mro_info,
-    "Новочебоксарское МРО": novocheboksarskoe_mro_info,
-    "Цивильское МРО": civilskoe_mro_info, 
-    "Шумерлинское МРО": shumerlinskoe_mro_info,
-    "Ядринское МРО": yadrinskoe_mro_info,
-    "Управление": upravlenie_info
-
-}
-
-
-keyboard_mapping = {
-    "Чебоксарское МРО": choose_MRO_1_2_3_keyboard,
-    "Алатырское МРО": main_menu_keyboard,
-    "Батыревское МРО": choose_MRO_1_2_3_4_keyboard,
-    "Канашское МРО": choose_MRO_1_2_3_4_keyboard,
-    "Новочебоксарское МРО": choose_MRO_1_2_keyboard,
-    "Цивильское МРО": choose_MRO_1_2_keyboard,
-    "Шумерлинское МРО": choose_MRO_1_2_keyboard,
-    "Ядринское МРО": choose_MRO_1_2_keyboard,
-    "Управление": main_menu_keyboard
 }

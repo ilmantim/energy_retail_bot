@@ -105,33 +105,14 @@ def choose_MRO_keyboard():
         resize_keyboard=True,
         one_time_keyboard=True
     )
-    
 
-def choose_MRO_1_2_keyboard():
-    return ReplyKeyboardMarkup([
-        ["1", "2"],
-        ["Главное меню"]
-    ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-    
 
-def choose_MRO_1_2_3_keyboard():
-    return ReplyKeyboardMarkup([
-        ["1", "2", "3"],
-        ["Главное меню"]      
-    ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-    
-
-def choose_MRO_1_2_3_4_keyboard():
-    return ReplyKeyboardMarkup([
-        ["1", "2", "3","4"],
-        ["Главное меню"]      
-    ],
+def choose_address_keyboard(addresses):
+    return ReplyKeyboardMarkup(
+        [
+            addresses,
+            ["Главное меню"]
+        ],
         resize_keyboard=True,
         one_time_keyboard=True
     )
