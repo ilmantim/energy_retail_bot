@@ -32,7 +32,7 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
         )
-        user_bills = [str(bill.value) for bill in user.bills.all()]
+        user_bills = [str(favorite.bill.value) for favorite in user.favorites.all()]
         all_bills = '\n'.join(user_bills)
         message = 'Ваши лицевые счета:\n' + all_bills
         context.bot.send_message(

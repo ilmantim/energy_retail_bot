@@ -25,6 +25,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     logger.info("Передать показания счётчиков")
 
     text = update.message.text
+    print(f'Это текст: {text}')
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
@@ -42,7 +43,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
 
     today = datetime.now()
     if 15 <= today.day <= 25:
-        if text.isdigit() and bills.filter(value=int(text)).exists():
+        if (text.isdigit() and bills.filter(value=int(text)).exists()) and not context.user_data['prev_step'] == 'choose':
             context.user_data['bill_num'] = text
             bill_here = bills.get(value=int(text))
             user_bills = Favorite.objects.filter(customer=user)
@@ -71,14 +72,34 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
             update.message.reply_text("Выберите нужный пункт в меню снизу.",
                                       reply_markup=submit_readnigs_and_get_meter_keyboard(
                                           info))
+            context.user_data['prev_step'] = 'choose'
+            return digit_checker(update, context)
         else:
             info = None
+            context.user_data['prev_step'] = 'enter_readings'
             update.message.reply_text("Введите лицевой счёт",
                                       reply_markup=submit_readnigs_and_get_meter_keyboard(
                                           info))
-        return SUBMIT_READINGS
+            return SUBMIT_READINGS
 
     else:
         update.message.reply_text(
             "Показания принимаются с 15 по 25 число каждого месяца.")
         return MAIN_MENU
+
+
+def digit_checker(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    print(f'Это текст: {text}')
+    user_here = Customer.objects.get(
+        chat_id=int(context.user_data['chat_id']))
+    if text in ["Как узнать лицевой счёт", "В главное меню", 'Ввести другой', 'Передать показания счётчиков']:
+        return SUBMIT_READINGS
+    elif text.isdigit() and user_here.favorites.filter(bill__value=int(text)).exists():
+        return SUBMIT_READINGS
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Не понял команду. Давайте начнем сначала."
+        )
+        return SUBMIT_READINGS

@@ -51,7 +51,7 @@ def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
         )
-        user_bills = [str(bill.value) for bill in user.bills.all()]
+        user_bills = [str(favorite.bill.value) for favorite in user.favorites.all()]
         update.message.reply_text(
             "Выберите лицевой счёт, который Вы хотите удалить.",
             reply_markup=delete_bills_keyboard(user_bills)
