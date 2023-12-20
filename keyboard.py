@@ -25,27 +25,37 @@ def go_to_main_menu_keyboard():
     )
 
 
-def main_menu_keyboard():
-    return ReplyKeyboardMarkup([
-        ["Передать показания счётчиков"],
-        ["Приборы учёта"],
-        ["Контакты и режим работы"]
-    ],
+def main_menu_keyboard(bills=False):
+    if not bills:
+        info = [
+            ["Передать показания счётчиков"],
+            ["Приборы учёта"],
+            ["Контакты и режим работы"]
+        ]
+    else:
+        info = [
+            ["Передать показания счётчиков"],
+            ["Приборы учёта"],
+            ["Мои лицевые счета"],
+            ["Контакты и режим работы"]
+        ]
+    return ReplyKeyboardMarkup(
+        info,
         resize_keyboard=True,
         one_time_keyboard=True
     )
 
 
-def main_menu_with_bills_keyboard():
-    return ReplyKeyboardMarkup([
-        ["Передать показания счётчиков"],
-        ["Приборы учёта"],
-        ["Мои лицевые счета"],
-        ["Контакты и режим работы"]
-    ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
+# def main_menu_with_bills_keyboard():
+#     return ReplyKeyboardMarkup([
+#         ["Передать показания счётчиков"],
+#         ["Приборы учёта"],
+#         ["Мои лицевые счета"],
+#         ["Контакты и режим работы"]
+#     ],
+#         resize_keyboard=True,
+#         one_time_keyboard=True
+#     )
 
 
 def submit_readnigs_and_get_meter_keyboard(info=None):
@@ -86,12 +96,10 @@ def show_bills_keyboard():
     )
 
 
-def delete_bills_keyboard():
-    return ReplyKeyboardMarkup([
-        ["Здесь должны быть избранные счета"],
-        # сюда добавляется избранный счёт
-        ["Назад", "Главное меню"]
-    ],
+def delete_bills_keyboard(info):
+    info.append(["Назад", "Главное меню"])
+    return ReplyKeyboardMarkup(
+        info,
         resize_keyboard=True,
         one_time_keyboard=True
     )
