@@ -49,8 +49,3 @@ def yes_or_no_address(update: Update, context: CallbackContext) -> int:
             return SUBMIT_READINGS
         elif context.user_data['prev_step'] == 'meter':
             return METER_INFO
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text='ты где то зафейлил'
-            )

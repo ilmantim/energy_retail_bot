@@ -30,7 +30,7 @@ def manage_delete(update: Update, context: CallbackContext) -> int:
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
         )
-        user.bills.get(value=int(text)).delete()
+        user.favorites.get(bill__value=int(text)).delete()
         context.user_data['bills_count'] = user.favorites.count()
         context.bot.send_message(
             chat_id=update.effective_chat.id,

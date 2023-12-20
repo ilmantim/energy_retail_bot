@@ -36,8 +36,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
     if text.isdigit() and bills.filter(value=int(text)).exists():
         context.user_data['bill_num'] = text
         bill_here = bills.get(value=int(text))
-        user_bills = user.bills.all()
-        if user_bills.filter(value=bill_here.value).exists():
+        user_bills = Favorite.objects.filter(customer=user)
+        if user_bills.filter(bill__value=bill_here.value).exists():
             update.message.reply_text(
                 f'Лицевой счет: {bill_here.value}\n'
                 f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
@@ -58,7 +58,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
 
     user_here = Customer.objects.get(
         chat_id=int(context.user_data['chat_id']))
-    if user_here.bills.count() > 0 and not text == 'Ввести другой':
+    if user_here.favorites.count() > 0 and not text == 'Ввести другой':
         bills_here = user_here.favorites.all()
         info = [[fav_bill.bill.value] for fav_bill in bills_here]
         update.message.reply_text("Выберите нужный пункт в меню снизу.",

@@ -23,7 +23,7 @@ MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS,\
 
 def add_to_favorite(update: Update, context: CallbackContext) -> int:
     logger.info("add_to_favorite")
-    
+
     text = update.message.text
     bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
     if text.lower() == 'да':
@@ -54,11 +54,7 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
                 reply_markup=go_to_main_menu_keyboard()
             )
             return METER_INFO
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text='ты где то зафейлил'
-            )
+
     elif text.lower() == 'нет':
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
@@ -82,11 +78,7 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
                 reply_markup=go_to_main_menu_keyboard()
             )
             return METER_INFO
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text='ты где то зафейлил'
-            )
+
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -96,8 +88,3 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
             return SUBMIT_READINGS
         elif context.user_data['prev_step'] == 'meter':
             return METER_INFO
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text='ты где то зафейлил'
-            )

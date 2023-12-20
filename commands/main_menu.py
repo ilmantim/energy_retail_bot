@@ -2,6 +2,8 @@ import os
 import django
 import logging
 
+from commands.start import handle_start
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
 django.setup()
 
@@ -66,8 +68,16 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
                                   reply_markup=main_menu_keyboard(bills))
         return MAIN_MENU
     else:
+        user, is_found = Customer.objects.get_or_create(
+            chat_id=update.effective_chat.id
+        )
+        if user.favorites.count() > 0:
+            context.user_data['bills_count'] = user.favorites.count()
+            bills = True
+        else:
+            bills = False
         update.message.reply_text("Не понял команду. Давайте начнем сначала.",
-                                  reply_markup=main_menu_keyboard())
+                                  reply_markup=main_menu_keyboard(bills))
         return MAIN_MENU
     
 
@@ -75,4 +85,4 @@ def fallback(update: Update, context: CallbackContext) -> int:
     logger.warning("Неизвестная команда")
     update.message.reply_text("Не понял команду. Давайте начнем сначала.",
                               reply_markup=main_menu_keyboard())
-    return MAIN_MENU
+    return handle_start(update, context)

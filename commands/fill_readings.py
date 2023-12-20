@@ -48,8 +48,3 @@ def fill_readings(update: Update, context: CallbackContext) -> int:
             text=f'Показания сохранены.'
         )
         return handle_start(update, context)
-    else:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text='ты где то зафейлил'
-        )

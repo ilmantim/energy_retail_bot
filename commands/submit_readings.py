@@ -7,7 +7,7 @@ django.setup()
 
 from telegram import Update
 from telegram.ext import CallbackContext
-from retail.models import Mro, Bill, Customer
+from retail.models import Mro, Bill, Customer, Favorite
 from datetime import datetime
 from keyboard import yes_or_no_keyboard,\
     go_to_main_menu_keyboard,\
@@ -27,12 +27,13 @@ MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS,\
 
 def submit_readings(update: Update, context: CallbackContext) -> int:
     logger.info("Передать показания счётчиков")
-    bills = Bill.objects.all()
+
     text = update.message.text
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
-
+    # посылаем запрос, получаем ответ со счетом, если счет есть добавляем в БД
+    bills = Bill.objects.all()
     if text == "В главное меню":
         return handle_start(update, context)
 
@@ -48,8 +49,8 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         if text.isdigit() and bills.filter(value=int(text)).exists():
             context.user_data['bill_num'] = text
             bill_here = bills.get(value=int(text))
-            user_bills = user.bills.all()
-            if user_bills.filter(value=bill_here.value).exists():
+            user_bills = Favorite.objects.filter(customer=user)
+            if user_bills.filter(bill__value=bill_here.value).exists():
                 update.message.reply_text(
                     f'Лицевой счет: {bill_here.value}\n'
                     f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
@@ -68,7 +69,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
 
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
-        if user_here.bills.count() > 0 and not text == 'Ввести другой':
+        if user_here.favorites.count() > 0 and not text == 'Ввести другой':
             bills_here = user_here.favorites.all()
             info = [[fav_bill.bill.value] for fav_bill in bills_here]
             update.message.reply_text("Выберите нужный пункт в меню снизу.",
