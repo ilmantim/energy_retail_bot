@@ -10,6 +10,7 @@ from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
     CallbackContext, ConversationHandler, CallbackQueryHandler
 from retail.models import Mro, Bill, Customer
+from django.utils import timezone
 from datetime import datetime
 from keyboard import yes_or_no_keyboard, yes_and_no_keyboard, \
     go_to_main_menu_keyboard, main_menu_keyboard, \
@@ -29,8 +30,7 @@ logging.basicConfig(
     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(
-    7)
+MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(8)
 
 
 def handle_start(update: Update, context: CallbackContext) -> int:
@@ -218,16 +218,14 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
             user_bills = user.bills.all()
             if user_bills.filter(value=bill_here.value).exists():
                 update.message.reply_text(
-                    f'Это сообщение вы видите, если выбрали из избранного \n инфа: \n номер ЛС: {bill_here.value}\n'
-                    '\n'
-                    'Лицевой счет: 100399652\n'
-                    'Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n'
-                    'Показания: 21780\n'
-                    'Дата приёма: 17.11.2023\n'
+                    f'Лицевой счет: {bill_here.value}\n'
+                    f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                    f'Показания: {bill_here.readings} квт*ч\n'
+                    f'Дата приёма: {bill_here.registration_date}\n'
                     'Введите новые показания:',
                     reply_markup=go_to_main_menu_keyboard()
                 )
-                return MAIN_MENU
+                return FILL_READINGS
             else:
                 context.user_data['prev_step'] = 'submit'
                 message = f'Адрес объекта - {bill_here.address}?'
@@ -254,6 +252,37 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         update.message.reply_text(
             "Показания принимаются с 15 по 25 число каждого месяца.")
         return MAIN_MENU
+
+
+def fill_readings(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    if text == "В главное меню":
+        return handle_start(update, context)
+    elif text.isdigit():
+        user_here = Customer.objects.get(
+            chat_id=int(context.user_data['chat_id']))
+        bill_here = user_here.bills.get(value=int(context.user_data['bill_num']))
+        if bill_here.readings:
+            readings_1 = bill_here.readings
+            readings_2 = int(text)
+            subtraction = readings_2 - readings_1
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Ваш расход составил {subtraction} квт*ч'
+            )
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Показания сохранены.'
+            )
+        bill_here.readings = int(text)
+        bill_here.registration_date = timezone.now().date()
+        bill_here.save()
+        return handle_start(update, context)
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text='ты где то зафейлил'
+        )
 
 
 def yes_or_no_address(update: Update, context: CallbackContext) -> int:
@@ -290,8 +319,8 @@ def yes_or_no_address(update: Update, context: CallbackContext) -> int:
 
 def add_to_favorite(update: Update, context: CallbackContext) -> int:
     text = update.message.text
+    bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
     if text.lower() == 'да':
-        bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
         bill_here.customers.add(user_here)
@@ -310,16 +339,14 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
             )
     elif text.lower() == 'нет':
         update.message.reply_text(
-            'Это сообщение вы видите, решили не добавлять счет в избранное\n'
-            '\n'
-            'Лицевой счет: 100399652\n'
-            'Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n'
-            'Показания: 21780\n'
-            'Дата приёма: 17.11.2023\n'
-            'Введите новые показания:',
+            f'Лицевой счет: {bill_here.value}\n'
+                    f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                    f'Показания: {bill_here.readings} квт*ч\n'
+                    f'Дата приёма: {bill_here.registration_date}\n'
+                    'Введите новые показания:',
             reply_markup=go_to_main_menu_keyboard()
         )
-        return MAIN_MENU
+        return FILL_READINGS
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -362,13 +389,10 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         user_bills = user.bills.all()
         if user_bills.filter(value=bill_here.value).exists():
             update.message.reply_text(
-                f'Это сообщение вы видите, если выбрали из избранного \n инфа: \n номер ЛС: {bill_here.value}\n'
-                '\n'
-                'Лицевой счет: 100399652\n'
-                'Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n'
-                'Показания: 21780\n'
-                'Дата приёма: 17.11.2023\n'
-                'Введите новые показания:',
+                f'Лицевой счет: {bill_here.value}\n'
+                    f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                    f'Показания: {bill_here.readings} квт*ч\n'
+                    f'Дата приёма: {bill_here.registration_date}\n',
                 reply_markup=go_to_main_menu_keyboard()
             )
             return MAIN_MENU
@@ -475,6 +499,8 @@ def main() -> None:
                                        handle_main_menu)],
             SUBMIT_READINGS: [MessageHandler(Filters.text & ~Filters.command,
                                              submit_readings)],
+            FILL_READINGS: [MessageHandler(Filters.text & ~Filters.command,
+                                             fill_readings)],
             YES_OR_NO_ADDRESS: [MessageHandler(Filters.text & ~Filters.command,
                                                yes_or_no_address)],
             ADD_TO_FAVORITE: [MessageHandler(Filters.text & ~Filters.command,

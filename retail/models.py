@@ -68,3 +68,21 @@ class Bill(models.Model):
         null=True,
         blank=True
     )
+    number_and_type_pu = models.TextField(
+        'Номер и тип ПУ',
+        null=True,
+        blank=True
+    )
+    readings = models.IntegerField(
+        'Показания счетчика',
+        null=True,
+        blank=True
+    )
+    registration_date = models.DateTimeField(
+        'Дата приёма',
+        null=True,
+        blank=True
+    )
+
+
+
