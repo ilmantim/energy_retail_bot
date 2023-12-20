@@ -70,7 +70,7 @@ def manage_delete(update: Update, context: CallbackContext) -> int:
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
         )
-        user.bills.get(value=int(text)).delete()
+        user.favorites.get(bill__value=int(text)).delete()
         context.user_data['bills_count'] = user.favorites.count()
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -148,59 +148,14 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
 
 
 def submit_readings(update: Update, context: CallbackContext) -> int:
-    """
-    TODO:
-        
-        -  Реализовать сценарий после ответа боту на date.message.reply_text("Введите лицевой счёт", reply_markup=submit_readnigs_and_get_meter_keyboard())
-
-           После ввода лицевого счета сделать так, чтобы был уточняющий вопрос "Тот ли это адрес?"
-
-            if "ДА" bot ask "Вы хотите добавить этот лицевой счёт в избранное?"
-                if "ДА" ["Мои лицевые счета"] ###### добавляются в стартовую клавиатуру (как этот номер добавить в кнопку?) ###### -----------> написать def get_my_bills()
-                                       and
-                             bot reply:  "Лицевой счет: 100399652\n"
-                                         "Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n"
-                                         "Показания: 21780\n"
-                                         "Дата приёма: 17.11.2023\n"
-                                         "Введите новые показания:
-                                                                    if показания отправлены бот reply    "Ваш расход составил (разница предыдущих и отправленных показаний)"
-                                                                                                          "Показания сохранены"
-
-                                                                                                          return в главное меню
-
-                elif "НЕТ" 
-                             bot reply:  "Лицевой счет: 100399652\n"
-                                         "Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n"
-                                         "Показания: 21780\n"
-                                         "Дата приёма: 17.11.2023\n"
-                                         "Введите новые показания:
-                                                                     if показания отправлены бот reply    "Ваш расход составил (разница предыдущих и отправленных показаний)"
-                                                                                                           "Показания сохранены"
-
-                                                                                                           return в главное меню
-
- 
-           ###### elif "Нет" ("Тот ли это адрес?") bot reply  "Проверьте правильность введения номера лицевого счета.\n"
-           ######                                             "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
-           ######                                             "Для уточнения информации обратитесь к специалисту контакт-центра"
-           ######
-           ######                                              return в главное меню
-           ######
-
-        - Реализовать передачу данных на сервер и запрос данных с сервера
-
-        ("Данные берутся из нашей основной БД через веб-эндпоинт. Шлешь джейсон с запросом, получаешь с ответом." (c))
-                
-
-    """
-
     logger.info("Передать показания счётчиков")
-    bills = Bill.objects.all()
+
     text = update.message.text
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
-
+    # посылаем запрос, получаем ответ со счетом, если счет есть добавляем в БД
+    bills = Bill.objects.all()
     if text == "В главное меню":
         return handle_start(update, context)
 
@@ -216,8 +171,8 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         if text.isdigit() and bills.filter(value=int(text)).exists():
             context.user_data['bill_num'] = text
             bill_here = bills.get(value=int(text))
-            user_bills = user.bills.all()
-            if user_bills.filter(value=bill_here.value).exists():
+            user_bills = Favorite.objects.filter(customer=user)
+            if user_bills.filter(bill__value=bill_here.value).exists():
                 update.message.reply_text(
                     f'Лицевой счет: {bill_here.value}\n'
                     f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
@@ -236,7 +191,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
 
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
-        if user_here.bills.count() > 0 and not text == 'Ввести другой':
+        if user_here.favorites.count() > 0 and not text == 'Ввести другой':
             bills_here = user_here.favorites.all()
             info = [[fav_bill.bill.value] for fav_bill in bills_here]
             update.message.reply_text("Выберите нужный пункт в меню снизу.",
@@ -400,19 +355,7 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
 
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
-    """"
-     Аналогичная submit_readings 
-                                  только if  отправлени лицевой счет:
-                                                         bot reply "Лицевой счёт %000000% успешно найден"
-                                                                    
-                                                                    "Лицевой счет: 100399652\n"
-                                                                    "Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n"
-                                                                    "Показания: 21780\n"
-                                                                    "Дата приёма: 17.11.2023\n"
-                                    
 
-
-    """
     logger.info("Приборы учёта")
     bills = Bill.objects.all()
     text = update.message.text
@@ -422,8 +365,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
     if text.isdigit() and bills.filter(value=int(text)).exists():
         context.user_data['bill_num'] = text
         bill_here = bills.get(value=int(text))
-        user_bills = user.bills.all()
-        if user_bills.filter(value=bill_here.value).exists():
+        user_bills = Favorite.objects.filter(customer=user)
+        if user_bills.filter(bill__value=bill_here.value).exists():
             update.message.reply_text(
                 f'Лицевой счет: {bill_here.value}\n'
                 f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
@@ -444,7 +387,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
 
     user_here = Customer.objects.get(
         chat_id=int(context.user_data['chat_id']))
-    if user_here.bills.count() > 0 and not text == 'Ввести другой':
+    if user_here.favorites.count() > 0 and not text == 'Ввести другой':
         bills_here = user_here.favorites.all()
         info = [[fav_bill.bill.value] for fav_bill in bills_here]
         update.message.reply_text("Выберите нужный пункт в меню снизу.",
