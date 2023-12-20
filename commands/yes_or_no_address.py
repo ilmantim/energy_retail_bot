@@ -1,10 +1,4 @@
-import os
-import django
 import logging
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
-django.setup()
-
 
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -15,13 +9,13 @@ from commands.start import handle_start
  
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    )
 logger = logging.getLogger(__name__)
 
 
-MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS,\
-      ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(8)
+MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
+    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS = range(8)
 
 
 def yes_or_no_address(update: Update, context: CallbackContext) -> int:
@@ -39,7 +33,7 @@ def yes_or_no_address(update: Update, context: CallbackContext) -> int:
             "Вы хотите добавить этот лицевой счёт в избранное?",
             reply_markup=yes_or_no_keyboard()
         )
-        return ADD_TO_FAVORITE
+        return CREATE_FAVORITE_BILL
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,

@@ -1,9 +1,4 @@
-import os
-import django
 import logging
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
-django.setup()
 
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -11,18 +6,19 @@ from telegram.ext import CallbackContext
 from retail.models import Bill, Customer, Favorite
 from keyboard import go_to_main_menu_keyboard
 
+
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    )
 logger = logging.getLogger(__name__)
 
 
-MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS,\
-      ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(8)
+MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
+    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS = range(8)
 
 
-def add_to_favorite(update: Update, context: CallbackContext) -> int:
-    logger.info("add_to_favorite")
+def create_favorite_bill(update: Update, context: CallbackContext) -> int:
+    logger.info("create_favorite_bill")
 
     text = update.message.text
     bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
@@ -47,7 +43,7 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
                 message,
                 reply_markup=go_to_main_menu_keyboard()
             )
-            return FILL_READINGS
+            return INPUT_READINGS
         elif context.user_data['prev_step'] == 'meter':
             update.message.reply_text(
                 message,
@@ -71,7 +67,7 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
                 message,
                 reply_markup=go_to_main_menu_keyboard()
             )
-            return FILL_READINGS
+            return INPUT_READINGS
         elif context.user_data['prev_step'] == 'meter':
             update.message.reply_text(
                 message,

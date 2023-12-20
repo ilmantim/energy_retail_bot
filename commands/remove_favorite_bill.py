@@ -1,9 +1,4 @@
-import os
-import django
 import logging
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
-django.setup()
 
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -14,17 +9,18 @@ from keyboard import main_menu_keyboard,\
 
 from commands.start import handle_start
 
+
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    )
 logger = logging.getLogger(__name__)
 
 
-MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS,\
-    ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(8)
+MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
+    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS = range(8)
 
 
-def manage_delete(update: Update, context: CallbackContext) -> int:
+def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     if text.isdigit() and context.user_data['bills_count'] > 0:
         user, is_found = Customer.objects.get_or_create(
@@ -48,7 +44,7 @@ def manage_delete(update: Update, context: CallbackContext) -> int:
             "Выберите нужный пункт снизу.",
             reply_markup=show_bills_keyboard()
         )
-        return MANAGE_DELETE
+        return REMOVE_FAVORITE_BILLS
     elif text == 'Главное меню':
         return handle_start(update, context)
     elif text == "Удалить лицевой счёт":
@@ -60,4 +56,4 @@ def manage_delete(update: Update, context: CallbackContext) -> int:
             "Выберите лицевой счёт, который Вы хотите удалить.",
             reply_markup=delete_bills_keyboard(user_bills)
         )
-        return MANAGE_DELETE
+        return REMOVE_FAVORITE_BILLS

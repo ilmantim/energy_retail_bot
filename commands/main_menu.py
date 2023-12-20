@@ -1,22 +1,18 @@
-import os
-import django
 import logging
-
-from commands.start import handle_start
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
-django.setup()
 
 from telegram import Update
 from telegram.ext import CallbackContext
-from retail.models import Customer
+
+from commands.start import handle_start
+from commands.submit_readings import submit_readings
+from commands.get_meter_info import get_meter_info
+from commands.get_contact_info import get_contact_info
 
 from keyboard import main_menu_keyboard,\
     show_bills_keyboard
 
-from commands.submit_readings import submit_readings
-from commands.get_meter_info import get_meter_info
-from commands.get_contact_info import get_contact_info
+from retail.models import Customer
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -24,9 +20,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS,\
-    ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(8)
-
+MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
+    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS = range(8)
 
 
 def handle_main_menu(update: Update, context: CallbackContext) -> int:
@@ -48,7 +43,7 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
             "Выберите нужный пункт снизу.",
             reply_markup=show_bills_keyboard()
         )
-        return MANAGE_DELETE
+        return REMOVE_FAVORITE_BILLS
     if text == "Передать показания счётчиков":
         return submit_readings(update, context)
     elif text == "Приборы учёта":
