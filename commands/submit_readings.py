@@ -52,7 +52,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                     f'Лицевой счет: {bill_here.value}\n'
                     f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
                     f'Показания: {bill_here.readings} квт*ч\n'
-                    f'Дата приёма: {bill_here.registration_date}\n'
+                    f'Дата приёма: {bill_here.registration_date.date().strftime("%Y-%m-%d")}\n'
                     'Введите новые показания:',
                     reply_markup=go_to_main_menu_keyboard()
                 )

@@ -35,7 +35,7 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
             f'Лицевой счет: {bill_here.value}\n'
             f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
             f'Показания: {bill_here.readings} квт*ч\n'
-            f'Дата приёма: {bill_here.registration_date}\n'
+            f'Дата приёма: {bill_here.registration_date.date().strftime("%Y-%m-%d")}\n'
         )
         if context.user_data['prev_step'] == 'submit':
             message += 'Введите новые показания:'
@@ -59,7 +59,7 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
             f'Лицевой счет: {bill_here.value}\n'
             f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
             f'Показания: {bill_here.readings} квт*ч\n'
-            f'Дата приёма: {bill_here.registration_date}\n'
+            f'Дата приёма: {bill_here.registration_date.date().strftime("%Y-%m-%d")}\n'
         )
         if context.user_data['prev_step'] == 'submit':
             message += 'Введите новые показания:'
