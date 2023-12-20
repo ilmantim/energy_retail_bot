@@ -85,4 +85,24 @@ class Bill(models.Model):
     )
 
 
+class Favorite(models.Model):
+    customer = models.ForeignKey(
+        Customer,
+        verbose_name='юзер избранного ЛС',
+        null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name='favorites'
+    )
+    bill = models.ForeignKey(
+        Bill,
+        verbose_name='Избранный ЛС',
+        null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name='favorites'
+    )
+    is_favorite = models.BooleanField(
+        'Избранный или нет',
+        null=True,
+        blank=True
+    )
 

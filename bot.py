@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
     CallbackContext, ConversationHandler, CallbackQueryHandler
-from retail.models import Mro, Bill, Customer
+from retail.models import Mro, Bill, Customer, Favorite
 from django.utils import timezone
 from datetime import datetime
 from keyboard import yes_or_no_keyboard, yes_and_no_keyboard, \
@@ -30,7 +30,8 @@ logging.basicConfig(
     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(8)
+MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(
+    8)
 
 
 def handle_start(update: Update, context: CallbackContext) -> int:
@@ -44,8 +45,8 @@ def handle_start(update: Update, context: CallbackContext) -> int:
             chat_id=update.effective_chat.id
         )
         context.user_data['chat_id'] = user.chat_id
-        if user.bills.count() > 0:
-            context.user_data['bills_count'] = user.bills.count()
+        if user.favorites.count() > 0:
+            context.user_data['bills_count'] = user.favorites.count()
             bills = True
         else:
             bills = False
@@ -70,12 +71,12 @@ def manage_delete(update: Update, context: CallbackContext) -> int:
             chat_id=update.effective_chat.id
         )
         user.bills.get(value=int(text)).delete()
-        context.user_data['bills_count'] = user.bills.count()
+        context.user_data['bills_count'] = user.favorites.count()
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text='Личный счет удален из вашего списка.'
         )
-        if user.bills.count() > 0:
+        if user.favorites.count() > 0:
             bills = True
         else:
             bills = False
@@ -132,8 +133,8 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
         )
-        if user.bills.count() > 0:
-            context.user_data['bills_count'] = user.bills.count()
+        if user.favorites.count() > 0:
+            context.user_data['bills_count'] = user.favorites.count()
             bills = True
         else:
             bills = False
@@ -236,8 +237,8 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
         if user_here.bills.count() > 0 and not text == 'Ввести другой':
-            bills_here = user_here.bills.all()
-            info = [[bill.value] for bill in bills_here]
+            bills_here = user_here.favorites.all()
+            info = [[fav_bill.bill.value] for fav_bill in bills_here]
             update.message.reply_text("Выберите нужный пункт в меню снизу.",
                                       reply_markup=submit_readnigs_and_get_meter_keyboard(
                                           info))
@@ -261,7 +262,8 @@ def fill_readings(update: Update, context: CallbackContext) -> int:
     elif text.isdigit():
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
-        bill_here = user_here.bills.get(value=int(context.user_data['bill_num']))
+        bill_here = user_here.bills.get(
+            value=int(context.user_data['bill_num']))
         if bill_here.readings:
             readings_1 = bill_here.readings
             readings_2 = int(text)
@@ -270,13 +272,13 @@ def fill_readings(update: Update, context: CallbackContext) -> int:
                 chat_id=update.effective_chat.id,
                 text=f'Ваш расход составил {subtraction} квт*ч'
             )
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Показания сохранены.'
-            )
         bill_here.readings = int(text)
-        bill_here.registration_date = timezone.now().date()
+        bill_here.registration_date = timezone.now()
         bill_here.save()
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f'Показания сохранены.'
+        )
         return handle_start(update, context)
     else:
         context.bot.send_message(
@@ -324,13 +326,29 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
         bill_here.customers.add(user_here)
-        update.message.reply_text(
-            'Это сообщение вы видите, если успешно добавили счет в избранное',
-            reply_markup=go_to_main_menu_keyboard()
+        Favorite.objects.create(
+            customer=user_here,
+            bill=bill_here,
+            is_favorite=True
+        )
+        message = (
+            f'Лицевой счет: {bill_here.value}\n'
+            f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+            f'Показания: {bill_here.readings} квт*ч\n'
+            f'Дата приёма: {bill_here.registration_date}\n'
         )
         if context.user_data['prev_step'] == 'submit':
-            return SUBMIT_READINGS
+            message += 'Введите новые показания:'
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
+            return FILL_READINGS
         elif context.user_data['prev_step'] == 'meter':
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
             return METER_INFO
         else:
             context.bot.send_message(
@@ -338,15 +356,33 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
                 text='ты где то зафейлил'
             )
     elif text.lower() == 'нет':
-        update.message.reply_text(
+        user_here = Customer.objects.get(
+            chat_id=int(context.user_data['chat_id']))
+        bill_here.customers.add(user_here)
+        message = (
             f'Лицевой счет: {bill_here.value}\n'
-                    f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
-                    f'Показания: {bill_here.readings} квт*ч\n'
-                    f'Дата приёма: {bill_here.registration_date}\n'
-                    'Введите новые показания:',
-            reply_markup=go_to_main_menu_keyboard()
+            f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+            f'Показания: {bill_here.readings} квт*ч\n'
+            f'Дата приёма: {bill_here.registration_date}\n'
         )
-        return FILL_READINGS
+        if context.user_data['prev_step'] == 'submit':
+            message += 'Введите новые показания:'
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
+            return FILL_READINGS
+        elif context.user_data['prev_step'] == 'meter':
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
+            return METER_INFO
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text='ты где то зафейлил'
+            )
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -390,9 +426,9 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         if user_bills.filter(value=bill_here.value).exists():
             update.message.reply_text(
                 f'Лицевой счет: {bill_here.value}\n'
-                    f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
-                    f'Показания: {bill_here.readings} квт*ч\n'
-                    f'Дата приёма: {bill_here.registration_date}\n',
+                f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                f'Показания: {bill_here.readings} квт*ч\n'
+                f'Дата приёма: {bill_here.registration_date}\n',
                 reply_markup=go_to_main_menu_keyboard()
             )
             return MAIN_MENU
@@ -409,8 +445,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
     user_here = Customer.objects.get(
         chat_id=int(context.user_data['chat_id']))
     if user_here.bills.count() > 0 and not text == 'Ввести другой':
-        bills_here = user_here.bills.all()
-        info = [[bill.value] for bill in bills_here]
+        bills_here = user_here.favorites.all()
+        info = [[fav_bill.bill.value] for fav_bill in bills_here]
         update.message.reply_text("Выберите нужный пункт в меню снизу.",
                                   reply_markup=submit_readnigs_and_get_meter_keyboard(
                                       info))
@@ -500,7 +536,7 @@ def main() -> None:
             SUBMIT_READINGS: [MessageHandler(Filters.text & ~Filters.command,
                                              submit_readings)],
             FILL_READINGS: [MessageHandler(Filters.text & ~Filters.command,
-                                             fill_readings)],
+                                           fill_readings)],
             YES_OR_NO_ADDRESS: [MessageHandler(Filters.text & ~Filters.command,
                                                yes_or_no_address)],
             ADD_TO_FAVORITE: [MessageHandler(Filters.text & ~Filters.command,
