@@ -2,10 +2,11 @@ import os
 import django
 import logging
 
+from dotenv import load_dotenv
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
 django.setup()
 
-from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters,\
       ConversationHandler
 
@@ -33,9 +34,6 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
 
 def main() -> None:
     load_dotenv()
-
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
-    django.setup()
 
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
