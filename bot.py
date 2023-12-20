@@ -2,7 +2,6 @@ import os
 import django
 import logging
 
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
 django.setup()
 
@@ -10,27 +9,29 @@ from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
     CallbackContext, ConversationHandler, CallbackQueryHandler
-from retail.models import Mro, Bill, Customer
+from retail.models import Mro, Bill, Customer, Favorite
+from django.utils import timezone
 from datetime import datetime
 from keyboard import yes_or_no_keyboard, yes_and_no_keyboard, \
     go_to_main_menu_keyboard, main_menu_keyboard, \
-    main_menu_with_bills_keyboard, submit_readnigs_and_get_meter_keyboard, \
+    submit_readnigs_and_get_meter_keyboard, \
     submit_readnigs_and_get_meter_with_bills_keyboard, \
     show_bills_keyboard, delete_bills_keyboard, \
-    choose_MRO_keyboard,  \
+    choose_MRO_keyboard, \
     choose_address_keyboard
 from messages import HELLO
-from dictionary import cheboksarskoe_mro_info, alatyrskoe_mro_info, batyrevo_mro_info, \
+from dictionary import cheboksarskoe_mro_info, alatyrskoe_mro_info, \
+    batyrevo_mro_info, \
     kanashskoe_mro_info, novocheboksarskoe_mro_info, civilskoe_mro_info, \
     shumerlinskoe_mro_info, yadrinskoe_mro_info, upravlenie_info
 
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-MAIN_MENU, SUBMIT_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(6)
+MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(
+    8)
 
 
 def handle_start(update: Update, context: CallbackContext) -> int:
@@ -38,26 +39,90 @@ def handle_start(update: Update, context: CallbackContext) -> int:
     TODO: привязку к id пользователя ( бот же должаен помнить счета конкретного юзера)
 
     """
-    # Если бот уже запущен
-    if context.user_data.get('has_started', False):
-        # Бот уже запущен, не выдаём HELLO
-        update.message.reply_text("Выберите раздел", reply_markup=main_menu_keyboard())
+
+    if context.user_data.get('has_started', True):
+        user, is_found = Customer.objects.get_or_create(
+            chat_id=update.effective_chat.id
+        )
+        context.user_data['chat_id'] = user.chat_id
+        if user.favorites.count() > 0:
+            context.user_data['bills_count'] = user.favorites.count()
+            bills = True
+        else:
+            bills = False
+        update.message.reply_text("Выберите раздел",
+                                  reply_markup=main_menu_keyboard(bills))
     else:
-        # Первый запуск бота
+
         context.user_data['has_started'] = True
         update.message.reply_text(HELLO)
 
         update.message.reply_text(
-        "Выберите раздел",
-        reply_markup=main_menu_keyboard()
+            "Выберите раздел",
+            reply_markup=main_menu_keyboard()
         )
     return MAIN_MENU
+
+
+def manage_delete(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    if text.isdigit() and context.user_data['bills_count'] > 0:
+        user, is_found = Customer.objects.get_or_create(
+            chat_id=update.effective_chat.id
+        )
+        user.bills.get(value=int(text)).delete()
+        context.user_data['bills_count'] = user.favorites.count()
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text='Личный счет удален из вашего списка.'
+        )
+        if user.favorites.count() > 0:
+            bills = True
+        else:
+            bills = False
+        update.message.reply_text("Выберите раздел",
+                                  reply_markup=main_menu_keyboard(bills))
+        return MAIN_MENU
+    elif text == 'Назад':
+        update.message.reply_text(
+            "Выберите нужный пункт снизу.",
+            reply_markup=show_bills_keyboard()
+        )
+        return MANAGE_DELETE
+    elif text == 'Главное меню':
+        return handle_start(update, context)
+    elif text == "Удалить лицевой счёт":
+        user, is_found = Customer.objects.get_or_create(
+            chat_id=update.effective_chat.id
+        )
+        user_bills = [str(bill.value) for bill in user.bills.all()]
+        update.message.reply_text(
+            "Выберите лицевой счёт, который Вы хотите удалить.",
+            reply_markup=delete_bills_keyboard(user_bills)
+        )
+        return MANAGE_DELETE
 
 
 def handle_main_menu(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     logger.info("Главное меню")
 
+    if text == "Мои лицевые счета" and context.user_data['bills_count']:
+        user, is_found = Customer.objects.get_or_create(
+            chat_id=update.effective_chat.id
+        )
+        user_bills = [str(bill.value) for bill in user.bills.all()]
+        all_bills = '\n'.join(user_bills)
+        message = 'Ваши лицевые счета:\n' + all_bills
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=message
+        )
+        update.message.reply_text(
+            "Выберите нужный пункт снизу.",
+            reply_markup=show_bills_keyboard()
+        )
+        return MANAGE_DELETE
     if text == "Передать показания счётчиков":
         return submit_readings(update, context)
     elif text == "Приборы учёта":
@@ -65,16 +130,24 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
     elif text == "Контакты и режим работы":
         return get_contact_info(update, context)
     elif text == "В главное меню":
-        update.message.reply_text("Выберите раздел.",
-                                  reply_markup=main_menu_keyboard())
+        user, is_found = Customer.objects.get_or_create(
+            chat_id=update.effective_chat.id
+        )
+        if user.favorites.count() > 0:
+            context.user_data['bills_count'] = user.favorites.count()
+            bills = True
+        else:
+            bills = False
+        update.message.reply_text("Выберите раздел",
+                                  reply_markup=main_menu_keyboard(bills))
         return MAIN_MENU
     else:
-        update.message.reply_text("Не понял команду. Давайте начнем сначала.", reply_markup=main_menu_keyboard())
+        update.message.reply_text("Не понял команду. Давайте начнем сначала.",
+                                  reply_markup=main_menu_keyboard())
         return MAIN_MENU
 
 
 def submit_readings(update: Update, context: CallbackContext) -> int:
-
     """
     TODO:
         
@@ -83,7 +156,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
            После ввода лицевого счета сделать так, чтобы был уточняющий вопрос "Тот ли это адрес?"
 
             if "ДА" bot ask "Вы хотите добавить этот лицевой счёт в избранное?"
-                if "ДА" ["Мои лицевые счета"] добавляются в стартовую клавиатуру (как этот номер добавить в кнопку?) -----------> написать def get_my_bills()
+                if "ДА" ["Мои лицевые счета"] ###### добавляются в стартовую клавиатуру (как этот номер добавить в кнопку?) ###### -----------> написать def get_my_bills()
                                        and
                              bot reply:  "Лицевой счет: 100399652\n"
                                          "Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n"
@@ -107,12 +180,12 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                                                                                                            return в главное меню
 
  
-            elif "Нет" ("Тот ли это адрес?") bot reply  "Проверьте правильность введения номера лицевого счета.\n"
-                                                        "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
-                                                         "Для уточнения информации обратитесь к специалисту контакт-центра"
-
-                                                          return в главное меню
-
+           ###### elif "Нет" ("Тот ли это адрес?") bot reply  "Проверьте правильность введения номера лицевого счета.\n"
+           ######                                             "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
+           ######                                             "Для уточнения информации обратитесь к специалисту контакт-центра"
+           ######
+           ######                                              return в главное меню
+           ######
 
         - Реализовать передачу данных на сервер и запрос данных с сервера
 
@@ -124,24 +197,9 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     logger.info("Передать показания счётчиков")
     bills = Bill.objects.all()
     text = update.message.text
-    user, is_found = Customer.objects.get_or_create(chat_id=update.effective_chat.id)
+    user, is_found = Customer.objects.get_or_create(
+        chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
-    if text.isdigit() and bills.filter(value=int(text)).exists():
-        context.user_data['bill_num'] = text
-        bill_here = bills.get(value=int(text))
-        user_bills = user.bills.all()
-        if user_bills.filter(value=bill_here.value).exists():
-            update.message.reply_text(
-                f'Это сообщение вы видите, если выбрали из избранного \n инфа: \n номер ЛС: {bill_here.value}',
-                reply_markup=go_to_main_menu_keyboard()
-            )
-            return MAIN_MENU
-        else:
-            context.user_data['prev_step'] = 'submit'
-            message = f'Адрес объекта - {bill_here.address}?'
-            update.message.reply_text(message,
-                                      reply_markup=yes_or_no_keyboard())
-            return YES_OR_NO_ADDRESS
 
     if text == "В главное меню":
         return handle_start(update, context)
@@ -155,10 +213,32 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
 
     today = datetime.now()
     if 15 <= today.day <= 25:
-        user_here = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
+        if text.isdigit() and bills.filter(value=int(text)).exists():
+            context.user_data['bill_num'] = text
+            bill_here = bills.get(value=int(text))
+            user_bills = user.bills.all()
+            if user_bills.filter(value=bill_here.value).exists():
+                update.message.reply_text(
+                    f'Лицевой счет: {bill_here.value}\n'
+                    f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                    f'Показания: {bill_here.readings} квт*ч\n'
+                    f'Дата приёма: {bill_here.registration_date}\n'
+                    'Введите новые показания:',
+                    reply_markup=go_to_main_menu_keyboard()
+                )
+                return FILL_READINGS
+            else:
+                context.user_data['prev_step'] = 'submit'
+                message = f'Адрес объекта - {bill_here.address}?'
+                update.message.reply_text(message,
+                                          reply_markup=yes_or_no_keyboard())
+                return YES_OR_NO_ADDRESS
+
+        user_here = Customer.objects.get(
+            chat_id=int(context.user_data['chat_id']))
         if user_here.bills.count() > 0 and not text == 'Ввести другой':
-            bills_here = user_here.bills.all()
-            info = [[bill.value] for bill in bills_here]
+            bills_here = user_here.favorites.all()
+            info = [[fav_bill.bill.value] for fav_bill in bills_here]
             update.message.reply_text("Выберите нужный пункт в меню снизу.",
                                       reply_markup=submit_readnigs_and_get_meter_keyboard(
                                           info))
@@ -168,10 +248,43 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                                       reply_markup=submit_readnigs_and_get_meter_keyboard(
                                           info))
         return SUBMIT_READINGS
-    
+
     else:
-        update.message.reply_text("Показания принимаются с 15 по 25 число каждого месяца.")
+        update.message.reply_text(
+            "Показания принимаются с 15 по 25 число каждого месяца.")
         return MAIN_MENU
+
+
+def fill_readings(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    if text == "В главное меню":
+        return handle_start(update, context)
+    elif text.isdigit():
+        user_here = Customer.objects.get(
+            chat_id=int(context.user_data['chat_id']))
+        bill_here = user_here.bills.get(
+            value=int(context.user_data['bill_num']))
+        if bill_here.readings:
+            readings_1 = bill_here.readings
+            readings_2 = int(text)
+            subtraction = readings_2 - readings_1
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Ваш расход составил {subtraction} квт*ч'
+            )
+        bill_here.readings = int(text)
+        bill_here.registration_date = timezone.now()
+        bill_here.save()
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f'Показания сохранены.'
+        )
+        return handle_start(update, context)
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text='ты где то зафейлил'
+        )
 
 
 def yes_or_no_address(update: Update, context: CallbackContext) -> int:
@@ -179,7 +292,9 @@ def yes_or_no_address(update: Update, context: CallbackContext) -> int:
     if text.lower() == 'нет':
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text='Это сообщение вы видите, если ответили, что адрес не тот'
+            text="Проверьте правильность введения номера лицевого счета.\n"
+                 "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
+                 "Для уточнения информации обратитесь к специалисту контакт-центра"
         )
         return handle_start(update, context)
     elif text.lower() == 'да':
@@ -206,17 +321,34 @@ def yes_or_no_address(update: Update, context: CallbackContext) -> int:
 
 def add_to_favorite(update: Update, context: CallbackContext) -> int:
     text = update.message.text
+    bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
     if text.lower() == 'да':
-        bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
-        user_here = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
+        user_here = Customer.objects.get(
+            chat_id=int(context.user_data['chat_id']))
         bill_here.customers.add(user_here)
-        update.message.reply_text(
-            'Это сообщение вы видите, если успешно добавили счет в избранное',
-            reply_markup=go_to_main_menu_keyboard()
+        Favorite.objects.create(
+            customer=user_here,
+            bill=bill_here,
+            is_favorite=True
+        )
+        message = (
+            f'Лицевой счет: {bill_here.value}\n'
+            f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+            f'Показания: {bill_here.readings} квт*ч\n'
+            f'Дата приёма: {bill_here.registration_date}\n'
         )
         if context.user_data['prev_step'] == 'submit':
-            return SUBMIT_READINGS
+            message += 'Введите новые показания:'
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
+            return FILL_READINGS
         elif context.user_data['prev_step'] == 'meter':
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
             return METER_INFO
         else:
             context.bot.send_message(
@@ -224,11 +356,33 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
                 text='ты где то зафейлил'
             )
     elif text.lower() == 'нет':
-        update.message.reply_text(
-            'Это сообщение вы видите, решили не добавлять счет в избранное',
-            reply_markup=go_to_main_menu_keyboard()
+        user_here = Customer.objects.get(
+            chat_id=int(context.user_data['chat_id']))
+        bill_here.customers.add(user_here)
+        message = (
+            f'Лицевой счет: {bill_here.value}\n'
+            f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+            f'Показания: {bill_here.readings} квт*ч\n'
+            f'Дата приёма: {bill_here.registration_date}\n'
         )
-        return MAIN_MENU
+        if context.user_data['prev_step'] == 'submit':
+            message += 'Введите новые показания:'
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
+            return FILL_READINGS
+        elif context.user_data['prev_step'] == 'meter':
+            update.message.reply_text(
+                message,
+                reply_markup=go_to_main_menu_keyboard()
+            )
+            return METER_INFO
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text='ты где то зафейлил'
+            )
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -246,7 +400,6 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
 
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
-    
     """"
      Аналогичная submit_readings 
                                   только if  отправлени лицевой счет:
@@ -272,7 +425,10 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         user_bills = user.bills.all()
         if user_bills.filter(value=bill_here.value).exists():
             update.message.reply_text(
-                f'Это сообщение вы видите, если выбрали из избранного \n инфа: \n номер ЛС: {bill_here.value}',
+                f'Лицевой счет: {bill_here.value}\n'
+                f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                f'Показания: {bill_here.readings} квт*ч\n'
+                f'Дата приёма: {bill_here.registration_date}\n',
                 reply_markup=go_to_main_menu_keyboard()
             )
             return MAIN_MENU
@@ -289,8 +445,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
     user_here = Customer.objects.get(
         chat_id=int(context.user_data['chat_id']))
     if user_here.bills.count() > 0 and not text == 'Ввести другой':
-        bills_here = user_here.bills.all()
-        info = [[bill.value] for bill in bills_here]
+        bills_here = user_here.favorites.all()
+        info = [[fav_bill.bill.value] for fav_bill in bills_here]
         update.message.reply_text("Выберите нужный пункт в меню снизу.",
                                   reply_markup=submit_readnigs_and_get_meter_keyboard(
                                       info))
@@ -309,10 +465,9 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
             reply_markup=submit_readnigs_and_get_meter_keyboard(info)
         )
         return METER_INFO
-    
+
 
 def get_contact_info(update: Update, context: CallbackContext) -> int:
-
     global prev_department
     logger.info("Контакты и режим работы")
     text = update.message.text
@@ -331,14 +486,16 @@ def get_contact_info(update: Update, context: CallbackContext) -> int:
     elif Mro.objects.filter(name=text).exists():
         department = Mro.objects.get(name=text)
         if department.addresses.count() > 0:
-            addresses = [str(i+1) for i in range(department.addresses.count())]
+            addresses = [str(i + 1) for i in
+                         range(department.addresses.count())]
 
             prev_department = department.name
             update.message.reply_text(
                 department.general,
                 reply_markup=choose_address_keyboard(addresses)
             )
-            update.message.reply_text("Выберите номер удобного для Вас МРО в меню снизу")
+            update.message.reply_text(
+                "Выберите номер удобного для Вас МРО в меню снизу")
             return CONTACT_INFO
         else:
             update.message.reply_text(
@@ -356,7 +513,8 @@ def get_contact_info(update: Update, context: CallbackContext) -> int:
 
 def fallback(update: Update, context: CallbackContext) -> int:
     logger.warning("Неизвестная команда")
-    update.message.reply_text("Не понял команду. Давайте начнем сначала.", reply_markup=main_menu_keyboard())
+    update.message.reply_text("Не понял команду. Давайте начнем сначала.",
+                              reply_markup=main_menu_keyboard())
     return MAIN_MENU
 
 
@@ -371,15 +529,25 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', handle_start)],
         states={
-            MAIN_MENU: [MessageHandler(Filters.text & ~Filters.command, handle_main_menu)],
-            SUBMIT_READINGS: [MessageHandler(Filters.text & ~Filters.command, submit_readings)],
-            YES_OR_NO_ADDRESS: [MessageHandler(Filters.text & ~Filters.command, yes_or_no_address)],
-            ADD_TO_FAVORITE: [MessageHandler(Filters.text & ~Filters.command, add_to_favorite)],
-            METER_INFO: [MessageHandler(Filters.text & ~Filters.command, get_meter_info)],
-            CONTACT_INFO: [MessageHandler(Filters.text & ~Filters.command, get_contact_info)],
+            MANAGE_DELETE: [MessageHandler(Filters.text & ~Filters.command,
+                                           manage_delete)],
+            MAIN_MENU: [MessageHandler(Filters.text & ~Filters.command,
+                                       handle_main_menu)],
+            SUBMIT_READINGS: [MessageHandler(Filters.text & ~Filters.command,
+                                             submit_readings)],
+            FILL_READINGS: [MessageHandler(Filters.text & ~Filters.command,
+                                           fill_readings)],
+            YES_OR_NO_ADDRESS: [MessageHandler(Filters.text & ~Filters.command,
+                                               yes_or_no_address)],
+            ADD_TO_FAVORITE: [MessageHandler(Filters.text & ~Filters.command,
+                                             add_to_favorite)],
+            METER_INFO: [MessageHandler(Filters.text & ~Filters.command,
+                                        get_meter_info)],
+            CONTACT_INFO: [MessageHandler(Filters.text & ~Filters.command,
+                                          get_contact_info)],
         },
         fallbacks=[
-            CommandHandler('start', handle_start), 
+            CommandHandler('start', handle_start),
             MessageHandler(Filters.text, fallback)
         ]
     )

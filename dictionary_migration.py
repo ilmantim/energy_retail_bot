@@ -1,5 +1,3 @@
-import pprint
-
 info = {
     "cheboksarskoe_mro_info": {
         "general": "1 — 428018, г. Чебоксары, пр. Московский, д.41, корп.1\n"
@@ -148,7 +146,3 @@ info = {
                    "ПТ 08:00-16:00 (перерыв с 12:00 до 13:00)"
     },
 }
-
-# pprint.pprint(info)
-for mro in info:
-    print(mro)

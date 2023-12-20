@@ -51,7 +51,6 @@ class Customer(models.Model):
     )
 
 
-
 class Bill(models.Model):
     customers = models.ManyToManyField(
         Customer,
@@ -64,3 +63,46 @@ class Bill(models.Model):
         null=True,
         blank=True
     )
+    address = models.TextField(
+        'адрес счета',
+        null=True,
+        blank=True
+    )
+    number_and_type_pu = models.TextField(
+        'Номер и тип ПУ',
+        null=True,
+        blank=True
+    )
+    readings = models.IntegerField(
+        'Показания счетчика',
+        null=True,
+        blank=True
+    )
+    registration_date = models.DateTimeField(
+        'Дата приёма',
+        null=True,
+        blank=True
+    )
+
+
+class Favorite(models.Model):
+    customer = models.ForeignKey(
+        Customer,
+        verbose_name='юзер избранного ЛС',
+        null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name='favorites'
+    )
+    bill = models.ForeignKey(
+        Bill,
+        verbose_name='Избранный ЛС',
+        null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name='favorites'
+    )
+    is_favorite = models.BooleanField(
+        'Избранный или нет',
+        null=True,
+        blank=True
+    )
+
