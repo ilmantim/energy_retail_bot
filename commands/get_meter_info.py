@@ -29,7 +29,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
-    if text.isdigit() and bills.filter(value=int(text)).exists():
+    if (text.isdigit() and bills.filter(value=int(text)).exists()) and not context.user_data['prev_step'] == 'choose':
         context.user_data['bill_num'] = text
         bill_here = bills.get(value=int(text))
         user_bills = Favorite.objects.filter(customer=user)
@@ -60,7 +60,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         update.message.reply_text("Выберите нужный пункт в меню снизу.",
                                   reply_markup=submit_readnigs_and_get_meter_keyboard(
                                       info))
-        return METER_INFO
+        context.user_data['prev_step'] = 'choose'
+        return digit_checker(update, context)
 
     elif text == "Как узнать лицевой счёт":
         update.message.reply_text(
@@ -70,8 +71,25 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         return METER_INFO
     else:
         info = None
+        context.user_data['prev_step'] = 'meters'
         update.message.reply_text(
             "Введите лицевой счет",
             reply_markup=submit_readnigs_and_get_meter_keyboard(info)
+        )
+        return METER_INFO
+
+
+def digit_checker(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    user_here = Customer.objects.get(
+        chat_id=int(context.user_data['chat_id']))
+    if text in ["Как узнать лицевой счёт", "В главное меню", 'Ввести другой', 'Приборы учёта']:
+        return METER_INFO
+    elif text.isdigit() and user_here.favorites.filter(bill__value=int(text)).exists():
+        return METER_INFO
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Не понял команду. Давайте начнем сначала."
         )
         return METER_INFO

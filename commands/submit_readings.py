@@ -25,7 +25,6 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     logger.info("Передать показания счётчиков")
 
     text = update.message.text
-    print(f'Это текст: {text}')
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
@@ -90,7 +89,6 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
 
 def digit_checker(update: Update, context: CallbackContext) -> int:
     text = update.message.text
-    print(f'Это текст: {text}')
     user_here = Customer.objects.get(
         chat_id=int(context.user_data['chat_id']))
     if text in ["Как узнать лицевой счёт", "В главное меню", 'Ввести другой', 'Передать показания счётчиков']:
