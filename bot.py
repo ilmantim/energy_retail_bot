@@ -20,26 +20,18 @@ from keyboard import yes_or_no_keyboard, yes_and_no_keyboard, \
     choose_MRO_keyboard, \
     choose_address_keyboard
 from messages import HELLO
-from dictionary import cheboksarskoe_mro_info, alatyrskoe_mro_info, \
-    batyrevo_mro_info, \
-    kanashskoe_mro_info, novocheboksarskoe_mro_info, civilskoe_mro_info, \
-    shumerlinskoe_mro_info, yadrinskoe_mro_info, upravlenie_info
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 MANAGE_DELETE, MAIN_MENU, SUBMIT_READINGS, FILL_READINGS, YES_OR_NO_ADDRESS, ADD_TO_FAVORITE, METER_INFO, CONTACT_INFO = range(
     8)
 
 
 def handle_start(update: Update, context: CallbackContext) -> int:
-    """
-    TODO: привязку к id пользователя ( бот же должаен помнить счета конкретного юзера)
-
-    """
-
     if context.user_data.get('has_started', True):
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
@@ -148,52 +140,6 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
 
 
 def submit_readings(update: Update, context: CallbackContext) -> int:
-    """
-    TODO:
-        
-        -  Реализовать сценарий после ответа боту на date.message.reply_text("Введите лицевой счёт", reply_markup=submit_readnigs_and_get_meter_keyboard())
-
-           После ввода лицевого счета сделать так, чтобы был уточняющий вопрос "Тот ли это адрес?"
-
-            if "ДА" bot ask "Вы хотите добавить этот лицевой счёт в избранное?"
-                if "ДА" ["Мои лицевые счета"] ###### добавляются в стартовую клавиатуру (как этот номер добавить в кнопку?) ###### -----------> написать def get_my_bills()
-                                       and
-                             bot reply:  "Лицевой счет: 100399652\n"
-                                         "Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n"
-                                         "Показания: 21780\n"
-                                         "Дата приёма: 17.11.2023\n"
-                                         "Введите новые показания:
-                                                                    if показания отправлены бот reply    "Ваш расход составил (разница предыдущих и отправленных показаний)"
-                                                                                                          "Показания сохранены"
-
-                                                                                                          return в главное меню
-
-                elif "НЕТ" 
-                             bot reply:  "Лицевой счет: 100399652\n"
-                                         "Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n"
-                                         "Показания: 21780\n"
-                                         "Дата приёма: 17.11.2023\n"
-                                         "Введите новые показания:
-                                                                     if показания отправлены бот reply    "Ваш расход составил (разница предыдущих и отправленных показаний)"
-                                                                                                           "Показания сохранены"
-
-                                                                                                           return в главное меню
-
- 
-           ###### elif "Нет" ("Тот ли это адрес?") bot reply  "Проверьте правильность введения номера лицевого счета.\n"
-           ######                                             "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
-           ######                                             "Для уточнения информации обратитесь к специалисту контакт-центра"
-           ######
-           ######                                              return в главное меню
-           ######
-
-        - Реализовать передачу данных на сервер и запрос данных с сервера
-
-        ("Данные берутся из нашей основной БД через веб-эндпоинт. Шлешь джейсон с запросом, получаешь с ответом." (c))
-                
-
-    """
-
     logger.info("Передать показания счётчиков")
     bills = Bill.objects.all()
     text = update.message.text
@@ -400,19 +346,6 @@ def add_to_favorite(update: Update, context: CallbackContext) -> int:
 
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
-    """"
-     Аналогичная submit_readings 
-                                  только if  отправлени лицевой счет:
-                                                         bot reply "Лицевой счёт %000000% успешно найден"
-                                                                    
-                                                                    "Лицевой счет: 100399652\n"
-                                                                    "Номер и тип ПУ: счётчик №06485054 на электроснабжение в подъезде\n"
-                                                                    "Показания: 21780\n"
-                                                                    "Дата приёма: 17.11.2023\n"
-                                    
-
-
-    """
     logger.info("Приборы учёта")
     bills = Bill.objects.all()
     text = update.message.text
