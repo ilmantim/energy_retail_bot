@@ -82,8 +82,14 @@ def manage_delete(update: Update, context: CallbackContext) -> int:
         update.message.reply_text("Выберите раздел",
                                   reply_markup=main_menu_keyboard(bills))
         return MAIN_MENU
+    elif text == 'Назад':
+        update.message.reply_text(
+            "Выберите нужный пункт снизу.",
+            reply_markup=show_bills_keyboard()
+        )
+        return MANAGE_DELETE
     elif text == 'Главное меню':
-        return MAIN_MENU
+        return handle_start(update, context)
     elif text == "Удалить лицевой счёт":
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
