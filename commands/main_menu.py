@@ -43,6 +43,7 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
             "Выберите нужный пункт снизу.",
             reply_markup=show_bills_keyboard()
         )
+        context.user_data['prev_step'] = 'choose'
         return REMOVE_FAVORITE_BILLS
     if text == "Передать показания счётчиков":
         return submit_readings(update, context)

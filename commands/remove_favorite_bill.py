@@ -22,10 +22,10 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
 
 def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
     text = update.message.text
-    if text.isdigit() and context.user_data['bills_count'] > 0:
-        user, is_found = Customer.objects.get_or_create(
-            chat_id=update.effective_chat.id
-        )
+    user, is_found = Customer.objects.get_or_create(
+        chat_id=update.effective_chat.id
+    )
+    if (text.isdigit() and user.favorites.filter(bill__value=int(text)).exists()) and not context.user_data['prev_step'] == 'choose':
         user.favorites.get(bill__value=int(text)).delete()
         context.user_data['bills_count'] = user.favorites.count()
         context.bot.send_message(
@@ -40,6 +40,7 @@ def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
                                   reply_markup=main_menu_keyboard(bills))
         return MAIN_MENU
     elif text == 'Назад':
+        context.user_data['prev_step'] = 'choose'
         update.message.reply_text(
             "Выберите нужный пункт снизу.",
             reply_markup=show_bills_keyboard()
@@ -48,6 +49,7 @@ def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
     elif text == 'Главное меню':
         return handle_start(update, context)
     elif text == "Удалить лицевой счёт":
+        context.user_data['prev_step'] = 'delete'
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
         )
@@ -55,5 +57,11 @@ def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
         update.message.reply_text(
             "Выберите лицевой счёт, который Вы хотите удалить.",
             reply_markup=delete_bills_keyboard(user_bills)
+        )
+        return REMOVE_FAVORITE_BILLS
+    else:
+        update.message.reply_text(
+            "Не понял команду. Давайте начнем сначала.",
+            reply_markup=show_bills_keyboard()
         )
         return REMOVE_FAVORITE_BILLS
