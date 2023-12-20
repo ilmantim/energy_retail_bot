@@ -8,7 +8,7 @@ django.setup()
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from retail.models import Bill, Customer
+from retail.models import Bill, Customer, Favorite
 
 from keyboard import yes_or_no_keyboard,\
     go_to_main_menu_keyboard,\
