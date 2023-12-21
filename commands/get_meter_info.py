@@ -32,57 +32,72 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
     user_bills = Favorite.objects.filter(customer=user)
-    if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
-        if text in response_1.keys():
-            bill_id = str(response_1[text]["id_PA"])
-            response_bill = response_2[bill_id]
-            context.user_data['bill_num'] = text
-            bill_here, is_found = Bill.objects.get_or_create(value=int(text))
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Счет успешно найден."
-            )
-
-            bill_here.number_and_type_pu = f'счётчик {response_bill["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
-            bill_here.readings = int(round(float(
-                f'{response_bill["core_devices"][0]["rates"][0]["current_month_reading_value"]}')))
-            moscow_timezone = timezone.get_fixed_timezone(180)
-            bill_here.registration_date = timezone.datetime.strptime(
-                f'{response_bill["core_devices"][0]["rates"][0]["current_month_reading_date"]}',
-                "%Y-%m-%dT%H:%M:%SZ"
-            ).astimezone(tz=moscow_timezone)
-            bill_here.address = (
-                f'{response_bill["core_devices"][0]["locality"]} '
-                f'{response_bill["core_devices"][0]["street"]} '
-                f'{response_bill["core_devices"][0]["type_house"]} '
-                f'{response_bill["core_devices"][0]["house"]} '
-                f'{response_bill["core_devices"][0]["condos_types"]} '
-                f'{response_bill["core_devices"][0]["condos_number"]} ')
-            bill_here.save()
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Не удалось найти счет."
-            )
-
-        if user_bills.filter(bill__value=bill_here.value).exists():
-            update.message.reply_text(
-                f'Лицевой счет: {bill_here.value}\n'
-                f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
-                f'Показания: {bill_here.readings} квт*ч\n'
-                f'Дата приёма: {bill_here.registration_date.date().strftime("%Y-%m-%d")}\n',
-                reply_markup=go_to_main_menu_keyboard()
-            )
-            return MAIN_MENU
-        else:
-            context.user_data['prev_step'] = 'meter'
-            message = f'Адрес объекта - {bill_here.address}?'
-            update.message.reply_text(message,
-                                      reply_markup=yes_or_no_keyboard())
-            return YES_OR_NO_ADDRESS
 
     if text == "В главное меню":
         return handle_start(update, context)
+    elif text == "Как узнать лицевой счёт":
+        update.message.reply_text(
+            "Лицевой счёт указан в верхней части квитанции (извещение) рядом "
+            "с Вашей фамилией \n",
+            reply_markup=submit_readnigs_and_get_meter_keyboard())
+        return METER_INFO
+
+    try:
+        if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
+            if text in response_1.keys():
+                bill_id = str(response_1[text]["id_PA"])
+                response_bill = response_2[bill_id]
+                context.user_data['bill_num'] = text
+                bill_here, is_found = Bill.objects.get_or_create(value=int(text))
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Счет успешно найден."
+                )
+
+                bill_here.number_and_type_pu = f'счётчик {response_bill["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
+                bill_here.readings = int(round(float(
+                    f'{response_bill["core_devices"][0]["rates"][0]["current_month_reading_value"]}')))
+                moscow_timezone = timezone.get_fixed_timezone(180)
+                bill_here.registration_date = timezone.datetime.strptime(
+                    f'{response_bill["core_devices"][0]["rates"][0]["current_month_reading_date"]}',
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ).astimezone(tz=moscow_timezone)
+                bill_here.address = (
+                    f'{response_bill["core_devices"][0]["locality"]} '
+                    f'{response_bill["core_devices"][0]["street"]} '
+                    f'{response_bill["core_devices"][0]["type_house"]} '
+                    f'{response_bill["core_devices"][0]["house"]} '
+                    f'{response_bill["core_devices"][0]["condos_types"]} '
+                    f'{response_bill["core_devices"][0]["condos_number"]} ')
+                bill_here.save()
+            else:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Не удалось найти счет."
+                )
+
+            if user_bills.filter(bill__value=bill_here.value).exists():
+                update.message.reply_text(
+                    f'Лицевой счет: {bill_here.value}\n'
+                    f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                    f'Показания: {bill_here.readings} квт*ч\n'
+                    f'Дата приёма: {bill_here.registration_date.date().strftime("%Y-%m-%d")}\n',
+                    reply_markup=go_to_main_menu_keyboard()
+                )
+                return MAIN_MENU
+            else:
+                context.user_data['prev_step'] = 'meter'
+                message = f'Адрес объекта - {bill_here.address}?'
+                update.message.reply_text(message,
+                                          reply_markup=yes_or_no_keyboard())
+                return YES_OR_NO_ADDRESS
+    except Bill.DoesNotExist:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Не понял команду. Давайте начнем сначала.",
+        )
+        return METER_INFO
+
 
     user_here = Customer.objects.get(
         chat_id=int(context.user_data['chat_id']))
@@ -95,12 +110,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         context.user_data['prev_step'] = 'choose'
         return digit_checker(update, context)
 
-    elif text == "Как узнать лицевой счёт":
-        update.message.reply_text(
-            "Лицевой счёт указан в верхней части квитанции (извещение) рядом "
-            "с Вашей фамилией \n Введите лицевой счет:",
-            reply_markup=submit_readnigs_and_get_meter_keyboard())
-        return METER_INFO
+
     else:
         info = None
         context.user_data['prev_step'] = 'meters'
