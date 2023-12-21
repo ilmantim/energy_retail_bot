@@ -50,7 +50,9 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
             # response_1 = response.json()
             # response = requests.get(url, params_2)
             # response_2 = response.json()
-            if text in response_2.values():
+            if text in response_1.keys():
+                bill_id = str(response_1[text]["id_PA"])
+                response_bill = response_2[bill_id]
                 context.user_data['bill_num'] = text
                 bill_here, is_found = Bill.objects.get_or_create(value=int(text))
                 context.bot.send_message(
@@ -58,19 +60,19 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                     text="Счет успешно найден."
                 )
 
-                bill_here.number_and_type_pu = f'счётчик {response_2["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
-                bill_here.readings = int(round(float(f'{response_2["core_devices"][0]["rates"][0]["current_month_reading_value"]}')))
+                bill_here.number_and_type_pu = f'счётчик {response_bill["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
+                bill_here.readings = int(round(float(f'{response_bill["core_devices"][0]["rates"][0]["current_month_reading_value"]}')))
                 moscow_timezone = timezone.get_fixed_timezone(180)
                 bill_here.registration_date = timezone.datetime.strptime(
-                    f'{response_2["core_devices"][0]["rates"][0]["current_month_reading_date"]}',
+                    f'{response_bill["core_devices"][0]["rates"][0]["current_month_reading_date"]}',
                     "%Y-%m-%dT%H:%M:%SZ"
                 ).astimezone(tz=moscow_timezone)
-                bill_here.address = (f'{response_2["core_devices"][0]["locality"]} '
-                                     f'{response_2["core_devices"][0]["street"]} '
-                                     f'{response_2["core_devices"][0]["type_house"]} '
-                                     f'{response_2["core_devices"][0]["house"]} '
-                                     f'{response_2["core_devices"][0]["condos_types"]} '
-                                     f'{response_2["core_devices"][0]["condos_number"]} ')
+                bill_here.address = (f'{response_bill["core_devices"][0]["locality"]} '
+                                     f'{response_bill["core_devices"][0]["street"]} '
+                                     f'{response_bill["core_devices"][0]["type_house"]} '
+                                     f'{response_bill["core_devices"][0]["house"]} '
+                                     f'{response_bill["core_devices"][0]["condos_types"]} '
+                                     f'{response_bill["core_devices"][0]["condos_number"]} ')
                 bill_here.save()
             else:
                 context.bot.send_message(
