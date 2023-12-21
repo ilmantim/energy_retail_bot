@@ -27,6 +27,7 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
 def get_meter_info(update: Update, context: CallbackContext) -> int:
     logger.info("Приборы учёта")
     text = update.message.text
+    bills = Bill.objects.all()
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
