@@ -25,7 +25,7 @@ response_1 = {
 url = "https://.........getAccountInfo/1343365"
 
 response_2 = {
-  "100399652": {
+  "1343365": {
     "core_devices": [
       {
         "id_meter": 5974604,
@@ -61,7 +61,7 @@ response_2 = {
       }
     ]
   },
-  "1": {
+  "1343366": {
     "core_devices": [
       {
         "id_meter": 5974605,
@@ -97,7 +97,7 @@ response_2 = {
       }
     ]
   },
-  "2": {
+  "1343367": {
     "core_devices": [
       {
         "id_meter": 5974606,
@@ -133,7 +133,7 @@ response_2 = {
       }
     ]
   },
-  "3": {
+  "1343368": {
     "core_devices": [
       {
         "id_meter": 5974607,
@@ -169,7 +169,7 @@ response_2 = {
       }
     ]
   },
-  "4": {
+  "1343369": {
     "core_devices": [
       {
         "id_meter": 5974608,
@@ -205,7 +205,7 @@ response_2 = {
       }
     ]
   },
-  "5": {
+  "1343370": {
     "core_devices": [
       {
         "id_meter": 5974609,
@@ -241,7 +241,7 @@ response_2 = {
       }
     ]
   },
-  "6": {
+  "1343371": {
     "core_devices": [
       {
         "id_meter": 5974610,
@@ -277,7 +277,7 @@ response_2 = {
       }
     ]
   },
-  "7": {
+  "1343372": {
     "core_devices": [
       {
         "id_meter": 5974611,
@@ -313,7 +313,7 @@ response_2 = {
       }
     ]
   },
-  "8": {
+  "1343373": {
     "core_devices": [
       {
         "id_meter": 5974612,
@@ -349,7 +349,7 @@ response_2 = {
       }
     ]
   },
-  "9": {
+  "1343374": {
     "core_devices": [
       {
         "id_meter": 5974613,
@@ -385,7 +385,7 @@ response_2 = {
       }
     ]
   },
-  "10": {
+  "1343375": {
     "core_devices": [
       {
         "id_meter": 5974614,
