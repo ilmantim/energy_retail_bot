@@ -9,7 +9,8 @@ from keyboard import yes_or_no_keyboard,\
     submit_readnigs_and_get_meter_keyboard
 
 from commands.start import handle_start    
-
+from database import response_1, response_2
+from django.utils import timezone
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -23,7 +24,6 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
 
 def submit_readings(update: Update, context: CallbackContext) -> int:
     logger.info("Передать показания счётчиков")
-
     text = update.message.text
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
@@ -31,9 +31,11 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     # посылаем запрос, получаем ответ со счетом, если счет есть добавляем в БД
     bills = Bill.objects.all()
     if text == "В главное меню":
+        context.user_data['prev_step'] = 'main'
         return handle_start(update, context)
 
     elif text == "Как узнать лицевой счёт":
+        context.user_data['prev_step'] = 'get_bill'
         update.message.reply_text(
             "Лицевой счёт указан в верхней части квитанции (извещение) рядом "
             "с Вашей фамилией \n Введите лицевой счет:",
@@ -41,11 +43,44 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         return SUBMIT_READINGS
 
     today = datetime.now()
+    user_bills = Favorite.objects.filter(customer=user)
     if 15 <= today.day <= 25:
-        if (text.isdigit() and bills.filter(value=int(text)).exists()) and not context.user_data['prev_step'] == 'choose':
+        if ((text.isdigit() and bills.filter(value=int(text)).exists()) and not \
+        context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
             context.user_data['bill_num'] = text
             bill_here = bills.get(value=int(text))
-            user_bills = Favorite.objects.filter(customer=user)
+        # if text.isdigit() and not context.user_data['prev_step'] == 'choose':
+        #     # response = requests.get(url, params_1)
+        #     # response_1 = response.json()
+        #     # response = requests.get(url, params_2)
+        #     # response_2 = response.json()
+        #     if text in response_2.values():
+        #         context.user_data['bill_num'] = text
+        #         bill_here, is_found = Bill.objects.get_or_create(value=int(text))
+        #         context.bot.send_message(
+        #             chat_id=update.effective_chat.id,
+        #             text="Счет успешно найден."
+        #         )
+        #
+        #         bill_here.number_and_type_pu = f'счётчик {response_2["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
+        #         bill_here.readings = int(round(float(f'{response_2["core_devices"][0]["rates"][0]["current_month_reading_value"]}')))
+        #         bill_here.registration_date = timezone.datetime.strptime(
+        #             f'{response_2["core_devices"][0]["rates"][0]["current_month_reading_date"]}',
+        #             "%Y-%m-%dT%H:%M:%SZ"
+        #         )
+        #         bill_here.address = (f'{response_2["core_devices"][0]["locality"]} '
+        #                              f'{response_2["core_devices"][0]["street"]} '
+        #                              f'{response_2["core_devices"][0]["type_house"]}'
+        #                              f'{response_2["core_devices"][0]["house"]}'
+        #                              f'{response_2["core_devices"][0]["condos_types"]}'
+        #                              f'{response_2["core_devices"][0]["condos_number"]}')
+        #         bill_here.save()
+        #     else:
+        #         context.bot.send_message(
+        #             chat_id=update.effective_chat.id,
+        #             text="Не удалось найти счет."
+        #         )
+
             if user_bills.filter(bill__value=bill_here.value).exists():
                 update.message.reply_text(
                     f'Лицевой счет: {bill_here.value}\n'
@@ -66,6 +101,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
         if user_here.favorites.count() > 0 and not text == 'Ввести другой':
+            print(context.user_data['prev_step'])
             bills_here = user_here.favorites.all()
             info = [[fav_bill.bill.value] for fav_bill in bills_here]
             update.message.reply_text("Выберите нужный пункт в меню снизу.",

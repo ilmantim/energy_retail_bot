@@ -29,10 +29,11 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
-    if (text.isdigit() and bills.filter(value=int(text)).exists()) and not context.user_data['prev_step'] == 'choose':
+    user_bills = Favorite.objects.filter(customer=user)
+    if ((text.isdigit() and bills.filter(value=int(text)).exists()) and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
         context.user_data['bill_num'] = text
         bill_here = bills.get(value=int(text))
-        user_bills = Favorite.objects.filter(customer=user)
+
         if user_bills.filter(bill__value=bill_here.value).exists():
             update.message.reply_text(
                 f'Лицевой счет: {bill_here.value}\n'

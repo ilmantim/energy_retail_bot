@@ -32,6 +32,7 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id
         )
+
         user_bills = [str(favorite.bill.value) for favorite in user.favorites.all()]
         all_bills = '\n'.join(user_bills)
         message = 'Ваши лицевые счета:\n' + all_bills
@@ -46,6 +47,7 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
         context.user_data['prev_step'] = 'choose'
         return REMOVE_FAVORITE_BILLS
     if text == "Передать показания счётчиков":
+        context.user_data['prev_step'] = 'main'
         return submit_readings(update, context)
     elif text == "Приборы учёта":
         return get_meter_info(update, context)
