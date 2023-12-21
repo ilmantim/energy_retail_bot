@@ -75,6 +75,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                     chat_id=update.effective_chat.id,
                     text="Не удалось найти счет."
                 )
+                return METER_INFO
 
             if user_bills.filter(bill__value=bill_here.value).exists():
                 update.message.reply_text(

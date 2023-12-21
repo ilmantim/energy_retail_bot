@@ -80,6 +80,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                         chat_id=update.effective_chat.id,
                         text="Не удалось найти счет."
                     )
+                    return SUBMIT_READINGS
 
                 if user_bills.filter(bill__value=bill_here.value).exists():
                     update.message.reply_text(
