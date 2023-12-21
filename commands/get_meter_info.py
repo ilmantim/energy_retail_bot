@@ -1,4 +1,4 @@
-
+import requests
 import logging
 
 from telegram import Update
@@ -44,9 +44,16 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
 
     try:
         if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
-            if text in response_1.keys():
-                bill_id = str(response_1[text]["id_PA"])
-                response_bill = response_2[bill_id]
+            url_for_id = f"https://lk-api-pp.backspark.ru/api/v0/cabinet/terminal/getAccounts/{text}"
+            response = requests.get(url_for_id)
+            response.raise_for_status()
+            response_id = response.json()
+            bill_id = str(response_id[0]["id_PA"])
+            url_for_bill = f"https://lk-api-pp.backspark.ru/api/v0/cabinet/terminal/getAccountInfo/{bill_id}"
+            response = requests.get(url_for_bill)
+            response.raise_for_status()
+            response_bill = response.json()
+            if text in response_bill.values():
                 context.user_data['bill_num'] = text
                 bill_here, is_found = Bill.objects.get_or_create(value=int(text))
                 context.bot.send_message(
@@ -98,6 +105,9 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
             text="Не понял команду. Давайте начнем сначала.",
         )
         return METER_INFO
+    except (requests.exceptions.ReadTimeout,
+            requests.exceptions.ConnectionError) as e:
+        logger.info(f'A connection error occurred:{e}')
 
 
     user_here = Customer.objects.get(

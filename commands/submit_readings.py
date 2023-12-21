@@ -1,5 +1,6 @@
 import logging
 
+import requests
 from telegram import Update
 from telegram.ext import CallbackContext
 from retail.models import Mro, Bill, Customer, Favorite
@@ -47,13 +48,16 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     if 15 <= today.day <= 25:
         try:
             if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
-                # response = requests.get(url, params_1)
-                # response_1 = response.json()
-                # response = requests.get(url, params_2)
-                # response_2 = response.json()
-                if text in response_1.keys():
-                    bill_id = str(response_1[text]["id_PA"])
-                    response_bill = response_2[bill_id]
+                url_for_id = f"https://lk-api-pp.backspark.ru/api/v0/cabinet/terminal/getAccounts/{text}"
+                response = requests.get(url_for_id)
+                response.raise_for_status()
+                response_id = response.json()
+                bill_id = str(response_id[0]["id_PA"])
+                url_for_bill = f"https://lk-api-pp.backspark.ru/api/v0/cabinet/terminal/getAccountInfo/{bill_id}"
+                response = requests.get(url_for_bill)
+                response.raise_for_status()
+                response_bill = response.json()
+                if text in response_bill.values():
                     context.user_data['bill_num'] = text
                     bill_here, is_found = Bill.objects.get_or_create(value=int(text))
                     context.bot.send_message(
@@ -122,6 +126,9 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                 "Не понял команду. Давайте начнем сначала."
             )
             return SUBMIT_READINGS
+        except (requests.exceptions.ReadTimeout,
+                requests.exceptions.ConnectionError) as e:
+            logger.info(f'A connection error occurred:{e}')
     else:
         update.message.reply_text(
             "Показания принимаются с 15 по 25 число каждого месяца.")
