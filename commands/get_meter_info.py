@@ -3,6 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import CallbackContext
 
+from database import response_2
 from retail.models import Bill, Customer, Favorite
 
 from keyboard import yes_or_no_keyboard,\
@@ -10,7 +11,7 @@ from keyboard import yes_or_no_keyboard,\
     submit_readnigs_and_get_meter_keyboard \
     
 from commands.start import handle_start
-
+from django.utils import timezone
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -24,15 +25,41 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
     logger.info("Приборы учёта")
-    bills = Bill.objects.all()
     text = update.message.text
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
     user_bills = Favorite.objects.filter(customer=user)
-    if ((text.isdigit() and bills.filter(value=int(text)).exists()) and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
-        context.user_data['bill_num'] = text
-        bill_here = bills.get(value=int(text))
+    if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
+        if text in response_2.values():
+            context.user_data['bill_num'] = text
+            bill_here, is_found = Bill.objects.get_or_create(value=int(text))
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Счет успешно найден."
+            )
+
+            bill_here.number_and_type_pu = f'счётчик {response_2["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
+            bill_here.readings = int(round(float(
+                f'{response_2["core_devices"][0]["rates"][0]["current_month_reading_value"]}')))
+            moscow_timezone = timezone.get_fixed_timezone(180)
+            bill_here.registration_date = timezone.datetime.strptime(
+                f'{response_2["core_devices"][0]["rates"][0]["current_month_reading_date"]}',
+                "%Y-%m-%dT%H:%M:%SZ"
+            ).astimezone(tz=moscow_timezone)
+            bill_here.address = (
+                f'{response_2["core_devices"][0]["locality"]} '
+                f'{response_2["core_devices"][0]["street"]} '
+                f'{response_2["core_devices"][0]["type_house"]} '
+                f'{response_2["core_devices"][0]["house"]} '
+                f'{response_2["core_devices"][0]["condos_types"]} '
+                f'{response_2["core_devices"][0]["condos_number"]} ')
+            bill_here.save()
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Не удалось найти счет."
+            )
 
         if user_bills.filter(bill__value=bill_here.value).exists():
             update.message.reply_text(
