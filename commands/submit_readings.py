@@ -96,6 +96,25 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                         text="Не удалось найти счет."
                     )
                     return SUBMIT_READINGS
+                
+                if user_bills.filter(bill__value=bill_here.value).exists():
+    
+                    registration_date_str = (
+                        bill_here.registration_date.date().strftime("%Y-%m-%d")
+                        if bill_here.registration_date else "Дата не указана"
+                    )
+                    readings_str = str(bill_here.readings) + ' квт*ч' if bill_here.readings is not None else "Показания не указаны"
+                    number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+        
+                    update.message.reply_text(
+                        f'Лицевой счет: {bill_here.value}\n'
+                        f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                        f'Показания: {readings_str}\n'
+                        f'Дата приёма: {registration_date_str}\n'
+                        'Введите новые показания:',
+                        reply_markup=go_to_main_menu_keyboard()
+                    )
+                    return INPUT_READINGS
 
                 if user_bills.filter(bill__value=bill_here.value).exists():
                     update.message.reply_text(
