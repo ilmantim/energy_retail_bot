@@ -48,13 +48,13 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     if 15 <= today.day <= 25:
         try:
             if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
-                url_for_id = f"https://lk-api-pp.backspark.ru/api/v0/cabinet/terminal/getAccounts/{text}"
+                url_for_id = f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/getAccounts/{text}"
                 response = requests.get(url_for_id)
                 response.raise_for_status()
                 response_id = response.json()
                 if response_id and "id_PA" in response_id[0]:
                     bill_id = str(response_id[0]["id_PA"])
-                    url_for_bill = f"https://lk-api-pp.backspark.ru/api/v0/cabinet/terminal/getAccountInfo/{bill_id}"
+                    url_for_bill = f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/getAccountInfo/{bill_id}"
                     response = requests.get(url_for_bill)
                     response.raise_for_status()
                     response_bill = response.json()
