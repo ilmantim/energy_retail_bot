@@ -39,6 +39,9 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         update.message.reply_text(
             "Лицевой счёт указан в верхней части квитанции (извещение) рядом "
             "с Вашей фамилией \n",
+        )
+        update.message.reply_text(
+            "Введите лицевой счёт",
             reply_markup=submit_readnigs_and_get_meter_keyboard())
         return METER_INFO
 
