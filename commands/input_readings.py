@@ -1,5 +1,7 @@
+import json
 import logging
 
+import requests
 from telegram import Update
 from telegram.ext import CallbackContext
     
@@ -43,4 +45,23 @@ def input_readings(update: Update, context: CallbackContext) -> int:
             chat_id=update.effective_chat.id,
             text=f'Показания сохранены.'
         )
+        data = {
+            "id_device": bill_here.id_device,
+            "id_receiving_method": 2,
+            "id_reading_status": 1,
+            "rates": [
+                {
+                    "id_tariff": bill_here.id_tariff,
+                    "id_indication": bill_here.id_indication,
+                    "reading": bill_here.readings
+                }
+            ]
+        }
+        json_data = json.dumps(data)
+        url = 'https://lk-api.backspark.ru/api/v0/cabinet/terminal/submitReadings'
+        response = requests.post(url, json=json_data)
+        if response.status_code == 200:
+            logger.info('Success!')
+        else:
+            logger.info('Error:', response.status_code)
         return handle_start(update, context)
