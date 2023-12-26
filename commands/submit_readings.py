@@ -3,6 +3,8 @@ import logging
 import requests
 from telegram import Update
 from telegram.ext import CallbackContext
+
+from commands.find_bill import find_bill
 from retail.models import Mro, Bill, Customer, Favorite
 from datetime import datetime
 from keyboard import yes_or_no_keyboard,\
@@ -48,55 +50,8 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     if 15 <= today.day <= 30:
         try:
             if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
-                url_for_id = f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/getAccounts/{text}"
-                response = requests.get(url_for_id)
-                response.raise_for_status()
-                response_id = response.json()
-                if response_id and "id_PA" in response_id[0]:
-                    bill_id = str(response_id[0]["id_PA"])
-                    url_for_bill = f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/getAccountInfo/{bill_id}"
-                    response = requests.get(url_for_bill)
-                    response.raise_for_status()
-                    response_bill = response.json()
-                    if text in response_bill.values():
-                        context.user_data['bill_num'] = text
-                        bill_here, is_found = Bill.objects.get_or_create(value=int(text))
-                        context.bot.send_message(
-                            chat_id=update.effective_chat.id,
-                            text="Счет успешно найден."
-                        )
-
-                        bill_here.number_and_type_pu = f'счётчик {response_bill["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
-                        readings = response_bill["core_devices"][0]["rates"][0]["current_month_reading_value"]
-                        if readings:
-                            bill_here.readings = int(round(float(readings)))
-                        date = response_bill["core_devices"][0]["rates"][0]["current_month_reading_date"]
-                        if date:
-                            moscow_timezone = timezone.get_fixed_timezone(180)
-                            bill_here.registration_date = timezone.datetime.strptime(
-                                date,
-                                "%Y-%m-%dT%H:%M:%SZ"
-                            ).astimezone(tz=moscow_timezone)
-                        bill_here.address = (f'{response_bill["core_devices"][0]["locality"]} '
-                                             f'{response_bill["core_devices"][0]["street"]} '
-                                             f'{response_bill["core_devices"][0]["type_house"]} '
-                                             f'{response_bill["core_devices"][0]["house"]} '
-                                             f'{response_bill["core_devices"][0]["condos_types"]} '
-                                             f'{response_bill["core_devices"][0]["condos_number"]} ')
-                        bill_here.save()
-                    else:
-                        context.bot.send_message(
-                            chat_id=update.effective_chat.id,
-                            text="Не удалось найти счет."
-                        )
-                        return SUBMIT_READINGS
-                else:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text="Не удалось найти счет."
-                    )
-                    return SUBMIT_READINGS
-                
+                find_bill(update, context, text, SUBMIT_READINGS)
+                bill_here = Bill.objects.get(value=int(text))
                 if user_bills.filter(bill__value=bill_here.value).exists():
     
                     registration_date_str = (
