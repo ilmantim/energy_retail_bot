@@ -4,9 +4,7 @@ import requests
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from commands.digit_checker import digit_checker
 from commands.find_bill import find_bill
-from commands.send_info import send_info
 from retail.models import Mro, Bill, Customer, Favorite
 from datetime import datetime
 from keyboard import yes_or_no_keyboard,\
@@ -55,13 +53,59 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                 find_bill(update, context, text, SUBMIT_READINGS)
                 bill_here = Bill.objects.get(value=int(text))
                 if user_bills.filter(bill__value=bill_here.value).exists():
-                    send_info(update, context, bill_here, submit=True)
+    
+                    registration_date_str = (
+                        bill_here.registration_date.date().strftime("%Y-%m-%d")
+                        if bill_here.registration_date else "Дата не указана"
+                    )
+                    readings_str = str(bill_here.readings) + ' квт*ч' if bill_here.readings is not None else "Показания не указаны"
+                    number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+        
+                    update.message.reply_text(
+                        f'Лицевой счет: {bill_here.value}\n'
+                        f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                        f'Показания: {readings_str}\n'
+                        f'Дата приёма: {registration_date_str}\n'
+                        'Введите новые показания:',
+                        reply_markup=go_to_main_menu_keyboard()
+                    )
+                    return INPUT_READINGS
+
+                if user_bills.filter(bill__value=bill_here.value).exists():
+                    update.message.reply_text(
+                        f'Лицевой счет: {bill_here.value}\n'
+                        f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
+                        f'Показания: {bill_here.readings} квт*ч\n'
+                        f'Дата приёма: {bill_here.registration_date.date().strftime("%Y-%m-%d")}\n'
+                        'Введите новые показания:',
+                        reply_markup=go_to_main_menu_keyboard()
+                    )
+                    return INPUT_READINGS
                 else:
                     context.user_data['prev_step'] = 'submit'
                     message = f'Адрес объекта - {bill_here.address}?'
                     update.message.reply_text(message,
                                               reply_markup=yes_or_no_keyboard())
                     return YES_OR_NO_ADDRESS
+
+            user_here = Customer.objects.get(
+                chat_id=int(context.user_data['chat_id']))
+            if user_here.favorites.count() > 0 and not text == 'Ввести другой':
+                print(context.user_data['prev_step'])
+                bills_here = user_here.favorites.all()
+                info = [[fav_bill.bill.value] for fav_bill in bills_here]
+                update.message.reply_text("Выберите нужный пункт в меню снизу.",
+                                          reply_markup=submit_readnigs_and_get_meter_keyboard(
+                                              info))
+                context.user_data['prev_step'] = 'choose'
+                return digit_checker(update, context)
+            else:
+                info = None
+                context.user_data['prev_step'] = 'enter_readings'
+                update.message.reply_text("Введите лицевой счёт",
+                                          reply_markup=submit_readnigs_and_get_meter_keyboard(
+                                              info))
+                return SUBMIT_READINGS
         except Bill.DoesNotExist:
             update.message.reply_text(
                 "Не понял команду. Давайте начнем сначала."
@@ -70,26 +114,23 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         except (requests.exceptions.ReadTimeout,
                 requests.exceptions.ConnectionError) as e:
             logger.info(f'A connection error occurred:{e}')
-
-        if user.favorites.count() > 0 and not text == 'Ввести другой':
-            print(context.user_data['prev_step'])
-            bills_here = user.favorites.all()
-            info = [[fav_bill.bill.value] for fav_bill in bills_here]
-            update.message.reply_text("Выберите нужный пункт в меню снизу.",
-                                      reply_markup=submit_readnigs_and_get_meter_keyboard(
-                                          info))
-            context.user_data['prev_step'] = 'choose'
-            return digit_checker(update, context, SUBMIT_READINGS, user)
-        else:
-            info = None
-            context.user_data['prev_step'] = 'enter_readings'
-            update.message.reply_text("Введите лицевой счёт",
-                                      reply_markup=submit_readnigs_and_get_meter_keyboard(
-                                          info))
-            return SUBMIT_READINGS
-
     else:
         update.message.reply_text(
             "Показания принимаются с 15 по 25 число каждого месяца.")
         return MAIN_MENU
 
+
+def digit_checker(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    user_here = Customer.objects.get(
+        chat_id=int(context.user_data['chat_id']))
+    if text in ["Как узнать лицевой счёт", "В главное меню", 'Ввести другой', 'Передать показания счётчиков']:
+        return SUBMIT_READINGS
+    elif text.isdigit() and user_here.favorites.filter(bill__value=int(text)).exists():
+        return SUBMIT_READINGS
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Не понял команду. Давайте начнем сначала."
+        )
+        return SUBMIT_READINGS

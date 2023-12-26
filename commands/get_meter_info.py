@@ -4,9 +4,7 @@ import logging
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from commands.digit_checker import digit_checker
 from commands.find_bill import find_bill
-from commands.send_info import send_info
 from database import response_2, response_1
 from retail.models import Bill, Customer, Favorite
 
@@ -53,7 +51,22 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
             find_bill(update, context, text, METER_INFO)
             bill_here = Bill.objects.get(value=int(text))
             if user_bills.filter(bill__value=bill_here.value).exists():
-                send_info(update, context, bill_here, submit=False)
+                registration_date_str = (
+                    bill_here.registration_date.date().strftime("%Y-%m-%d")
+                    if bill_here.registration_date else "Дата не указана"
+                    )
+                readings_str = str(bill_here.readings) + ' квт*ч' if bill_here.readings is not None else "Показания не указаны"
+                number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+
+                update.message.reply_text(
+                    f'Лицевой счет: {bill_here.value}\n'
+                    f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                    f'Показания: {readings_str}\n'
+                    f'Дата приёма: {registration_date_str}\n',
+                    reply_markup=go_to_main_menu_keyboard()
+                )
+                return MAIN_MENU
+
             else:
                 context.user_data['prev_step'] = 'meter'
                 message = f'Адрес объекта - {bill_here.address}?'
@@ -70,14 +83,17 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
             requests.exceptions.ConnectionError) as e:
         logger.info(f'A connection error occurred:{e}')
 
-    if user.favorites.count() > 0 and not text == 'Ввести другой':
-        bills_here = user.favorites.all()
+
+    user_here = Customer.objects.get(
+        chat_id=int(context.user_data['chat_id']))
+    if user_here.favorites.count() > 0 and not text == 'Ввести другой':
+        bills_here = user_here.favorites.all()
         info = [[fav_bill.bill.value] for fav_bill in bills_here]
         update.message.reply_text("Выберите нужный пункт в меню снизу.",
                                   reply_markup=submit_readnigs_and_get_meter_keyboard(
                                       info))
         context.user_data['prev_step'] = 'choose'
-        return digit_checker(update, context, METER_INFO, user)
+        return digit_checker(update, context)
 
 
     else:
@@ -86,5 +102,21 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         update.message.reply_text(
             "Введите лицевой счет",
             reply_markup=submit_readnigs_and_get_meter_keyboard(info)
+        )
+        return METER_INFO
+
+
+def digit_checker(update: Update, context: CallbackContext) -> int:
+    text = update.message.text
+    user_here = Customer.objects.get(
+        chat_id=int(context.user_data['chat_id']))
+    if text in ["Как узнать лицевой счёт", "В главное меню", 'Ввести другой', 'Приборы учёта']:
+        return METER_INFO
+    elif text.isdigit() and user_here.favorites.filter(bill__value=int(text)).exists():
+        return METER_INFO
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Не понял команду. Давайте начнем сначала."
         )
         return METER_INFO
