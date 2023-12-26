@@ -71,6 +71,9 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                         "current_month_reading_value"]
                     if readings:
                         bill_here.readings = int(round(float(readings)))
+                    bill_here.id_device = response_bill["core_devices"][0]["id_meter"]
+                    bill_here.id_tariff = response_bill["core_devices"][0]["rates"][0]["id_tariff"]
+                    bill_here.id_indication = response_bill["core_devices"][0]["rates"][0]["id_indication"]
                     date = response_bill["core_devices"][0]["rates"][0][
                         "current_month_reading_date"]
                     if date:

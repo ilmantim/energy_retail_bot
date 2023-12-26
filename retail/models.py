@@ -83,6 +83,21 @@ class Bill(models.Model):
         null=True,
         blank=True
     )
+    id_device = models.IntegerField(
+        'ID счетчика',
+        null=True,
+        blank=True
+    )
+    id_tariff = models.IntegerField(
+        'ID тарифа',
+        null=True,
+        blank=True
+    )
+    id_indication = models.IntegerField(
+        'ID показания',
+        null=True,
+        blank=True
+    )
 
 
 class Favorite(models.Model):
