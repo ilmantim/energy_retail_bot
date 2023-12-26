@@ -45,7 +45,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
 
     today = datetime.now()
     user_bills = Favorite.objects.filter(customer=user)
-    if 15 <= today.day <= 25:
+    if 15 <= today.day <= 30:
         try:
             if (text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists()):
                 url_for_id = f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/getAccounts/{text}"
