@@ -95,15 +95,27 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                 else:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text="Не удалось найти счет."
+                        text="Проверьте правильность введения номера лицевого счета.\n"
+                             "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
+                              "Для уточнения информации обратитесь к специалисту контакт-центра."
+                    )
+                    update.message.reply_text(
+                        "Введите лицевой счёт",
+                    reply_markup=submit_readnigs_and_get_meter_keyboard()
                     )
                     return METER_INFO
             else:
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text="Не удалось найти счет."
-                )
-                return METER_INFO
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text="Проверьте правильность введения номера лицевого счета.\n"
+                             "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
+                              "Для уточнения информации обратитесь к специалисту контакт-центра."
+                    )
+                    update.message.reply_text(
+                        "Введите лицевой счёт",
+                    reply_markup=submit_readnigs_and_get_meter_keyboard()
+                    )
+                    return METER_INFO
             
             if user_bills.filter(bill__value=bill_here.value).exists():
                 registration_date_str = (
