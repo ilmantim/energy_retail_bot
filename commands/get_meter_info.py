@@ -80,7 +80,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                         moscow_timezone = timezone.get_fixed_timezone(180)
                         bill_here.registration_date = timezone.datetime.strptime(
                             date,
-                            "%Y-%m-%dT%H:%M:%SZ"
+                            "%Y-%m-%dT%H:%M:%S.%fZ"
                         ).astimezone(tz=moscow_timezone)
                     bill_here.address = (
                         f'{response_bill["core_devices"][0]["locality"]} '
