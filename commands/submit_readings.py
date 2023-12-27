@@ -70,6 +70,8 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                         readings = response_bill["core_devices"][0]["rates"][0]["current_month_reading_value"]
                         if readings:
                             bill_here.readings = int(round(float(readings)))
+                        else:
+                            bill_here.readings = None
                         bill_here.id_device = response_bill["core_devices"][0]["id_meter"]
                         bill_here.id_tariff = response_bill["core_devices"][0]["rates"][0]["id_tariff"]
                         bill_here.id_indication = response_bill["core_devices"][0]["rates"][0]["id_indication"]
@@ -78,7 +80,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                             moscow_timezone = timezone.get_fixed_timezone(180)
                             bill_here.registration_date = timezone.datetime.strptime(
                                 date,
-                                "%Y-%m-%dT%H:%M:%SZ"
+                                "%Y-%m-%dT%H:%M:%S.%fZ"
                             ).astimezone(tz=moscow_timezone)
                         bill_here.address = (f'{response_bill["core_devices"][0]["locality"]} '
                                              f'{response_bill["core_devices"][0]["street"]} '
@@ -106,7 +108,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                         bill_here.registration_date.date().strftime("%Y-%m-%d")
                         if bill_here.registration_date else "Дата не указана"
                     )
-                    readings_str = str(bill_here.readings) + ' квт*ч' if bill_here.readings is not None else "Показания не указаны"
+                    readings_str = str(bill_here.readings) + ' квт*ч' if readings is not None else "Показания не указаны"
                     number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
         
                     update.message.reply_text(
@@ -119,16 +121,6 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                     )
                     return INPUT_READINGS
 
-                if user_bills.filter(bill__value=bill_here.value).exists():
-                    update.message.reply_text(
-                        f'Лицевой счет: {bill_here.value}\n'
-                        f'Номер и тип ПУ: {bill_here.number_and_type_pu}\n'
-                        f'Показания: {bill_here.readings} квт*ч\n'
-                        f'Дата приёма: {bill_here.registration_date.date().strftime("%Y-%m-%d")}\n'
-                        'Введите новые показания:',
-                        reply_markup=go_to_main_menu_keyboard()
-                    )
-                    return INPUT_READINGS
                 else:
                     context.user_data['prev_step'] = 'submit'
                     message = f'Адрес объекта - {bill_here.address}?'
@@ -136,24 +128,6 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                                               reply_markup=yes_or_no_keyboard())
                     return YES_OR_NO_ADDRESS
 
-            user_here = Customer.objects.get(
-                chat_id=int(context.user_data['chat_id']))
-            if user_here.favorites.count() > 0 and not text == 'Ввести другой':
-                print(context.user_data['prev_step'])
-                bills_here = user_here.favorites.all()
-                info = [[fav_bill.bill.value] for fav_bill in bills_here]
-                update.message.reply_text("Выберите нужный пункт в меню снизу.",
-                                          reply_markup=submit_readnigs_and_get_meter_keyboard(
-                                              info))
-                context.user_data['prev_step'] = 'choose'
-                return digit_checker(update, context)
-            else:
-                info = None
-                context.user_data['prev_step'] = 'enter_readings'
-                update.message.reply_text("Введите лицевой счёт",
-                                          reply_markup=submit_readnigs_and_get_meter_keyboard(
-                                              info))
-                return SUBMIT_READINGS
         except Bill.DoesNotExist:
             update.message.reply_text(
                 "Не понял команду. Давайте начнем сначала."
@@ -162,6 +136,26 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         except (requests.exceptions.ReadTimeout,
                 requests.exceptions.ConnectionError) as e:
             logger.info(f'A connection error occurred:{e}')
+
+        user_here = Customer.objects.get(
+            chat_id=int(context.user_data['chat_id']))
+        if user_here.favorites.count() > 0 and not text == 'Ввести другой':
+            print(context.user_data['prev_step'])
+            bills_here = user_here.favorites.all()
+            info = [[fav_bill.bill.value] for fav_bill in bills_here]
+            update.message.reply_text("Выберите нужный пункт в меню снизу.",
+                                      reply_markup=submit_readnigs_and_get_meter_keyboard(
+                                          info))
+            context.user_data['prev_step'] = 'choose'
+            return digit_checker(update, context)
+        else:
+            info = None
+            context.user_data['prev_step'] = 'enter_readings'
+            update.message.reply_text("Введите лицевой счёт",
+                                      reply_markup=submit_readnigs_and_get_meter_keyboard(
+                                          info))
+            return SUBMIT_READINGS
+
     else:
         update.message.reply_text(
             "Показания принимаются с 15 по 25 число каждого месяца.")

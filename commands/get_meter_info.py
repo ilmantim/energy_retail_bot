@@ -71,6 +71,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                         "current_month_reading_value"]
                     if readings:
                         bill_here.readings = int(round(float(readings)))
+                    else:
+                        bill_here.readings = None
                     bill_here.id_device = response_bill["core_devices"][0]["id_meter"]
                     bill_here.id_tariff = response_bill["core_devices"][0]["rates"][0]["id_tariff"]
                     bill_here.id_indication = response_bill["core_devices"][0]["rates"][0]["id_indication"]
@@ -108,7 +110,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                     bill_here.registration_date.date().strftime("%Y-%m-%d")
                     if bill_here.registration_date else "Дата не указана"
                     )
-                readings_str = str(bill_here.readings) + ' квт*ч' if bill_here.readings is not None else "Показания не указаны"
+                readings_str = str(bill_here.readings) + ' квт*ч' if readings is not None else "Показания не указаны"
                 number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
 
                 update.message.reply_text(
