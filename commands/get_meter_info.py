@@ -84,6 +84,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                             date,
                             "%Y-%m-%dT%H:%M:%S.%fZ"
                         ).astimezone(tz=moscow_timezone)
+                    else:
+                        bill_here.registration_date = None
                     bill_here.address = (
                         f'{response_bill["core_devices"][0]["locality"]} '
                         f'{response_bill["core_devices"][0]["street"]} '
@@ -111,7 +113,7 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                     if bill_here.registration_date else "Дата не указана"
                     )
                 readings_str = str(bill_here.readings) + ' квт*ч' if readings is not None else "Показания не указаны"
-                number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+                number_and_type_pu_str = bill_here.number_and_type_pu if date else "Номер и тип ПУ не указаны"
 
                 update.message.reply_text(
                     f'Лицевой счет: {bill_here.value}\n'
