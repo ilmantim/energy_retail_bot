@@ -51,12 +51,14 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
             response = requests.get(url_for_id)
             response.raise_for_status()
             response_id = response.json()
+
             if response_id and "id_PA" in response_id[0]:
                 bill_id = str(response_id[0]["id_PA"])
                 url_for_bill = f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/getAccountInfo/{bill_id}"
                 response = requests.get(url_for_bill)
                 response.raise_for_status()
                 response_bill = response.json()
+
                 if text in response_bill.values():
                     context.user_data['bill_num'] = text
                     bill_here, is_found = Bill.objects.get_or_create(
@@ -94,18 +96,32 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                         f'{response_bill["core_devices"][0]["condos_types"]} '
                         f'{response_bill["core_devices"][0]["condos_number"]} ')
                     bill_here.save()
+
                 else:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text="Не удалось найти счет."
+                        text="Проверьте правильность введения номера лицевого счета.\n"
+                             "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
+                              "Для уточнения информации обратитесь к специалисту контакт-центра."
                     )
-                    return METER_INFO
+                    update.message.reply_text(
+                        "Введите лицевой счёт",
+                    reply_markup=submit_readnigs_and_get_meter_keyboard()
+                    )
+                    return METER_INFO    
+            
             else:
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text="Не удалось найти счет."
-                )
-                return METER_INFO
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text="Проверьте правильность введения номера лицевого счета.\n"
+                             "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
+                              "Для уточнения информации обратитесь к специалисту контакт-центра."
+                    )
+                    update.message.reply_text(
+                        "Введите лицевой счёт",
+                    reply_markup=submit_readnigs_and_get_meter_keyboard()
+                    )
+                    return METER_INFO 
             
             if user_bills.filter(bill__value=bill_here.value).exists():
                 registration_date_str = (
@@ -134,8 +150,10 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Не понял команду. Давайте начнем сначала.",
+            reply_markup=go_to_main_menu_keyboard()
         )
         return METER_INFO
+    
     except (requests.exceptions.ReadTimeout,
             requests.exceptions.ConnectionError) as e:
         logger.info(f'A connection error occurred:{e}')
