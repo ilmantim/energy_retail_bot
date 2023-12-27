@@ -46,7 +46,19 @@ def main_menu_keyboard(bills=False):
     )
 
 
-def submit_readings_and_get_meter_keyboard(info=None):
+# def main_menu_with_bills_keyboard():
+#     return ReplyKeyboardMarkup([
+#         ["Передать показания счётчиков"],
+#         ["Приборы учёта"],
+#         ["Мои лицевые счета"],
+#         ["Контакты и режим работы"]
+#     ],
+#         resize_keyboard=True,
+#         one_time_keyboard=True
+#     )
+
+
+def submit_readnigs_and_get_meter_keyboard(info=None):
     if info is None:
         info = [
             ["Как узнать лицевой счёт"],

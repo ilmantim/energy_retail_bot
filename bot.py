@@ -1,6 +1,6 @@
-import logging
 import os
 import django
+import logging
 
 from dotenv import load_dotenv
 
@@ -10,16 +10,16 @@ django.setup()
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters,\
       ConversationHandler
 
-from commands.start import handle_start #done
-from commands.main_menu import fallback #done
-from commands.main_menu import handle_main_menu #done
+from commands.start import handle_start
+from commands.main_menu import fallback
+from commands.main_menu import handle_main_menu
 from commands.submit_readings import submit_readings
 from commands.input_readings import input_readings
-from commands.yes_or_no_address import yes_or_no_address #done
-from commands.get_meter_info import get_meter_info 
-from commands.get_contact_info import get_contact_info #done
-from commands.create_favorite_bill import create_favorite_bill #done
-from commands.remove_favorite_bill import remove_favorite_bill #done
+from commands.yes_or_no_address import yes_or_no_address
+from commands.get_meter_info import get_meter_info
+from commands.get_contact_info import get_contact_info
+from commands.create_favorite_bill import create_favorite_bill
+from commands.remove_favorite_bill import remove_favorite_bill
 
 
 logging.basicConfig(
