@@ -39,6 +39,9 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
         bill_here.customers.add(user_here)
         Favorite.objects.create(customer=user_here, bill=bill_here, is_favorite=True)
 
+    if text == 'нет':
+        bill_here.customers.add(user_here)
+
     if text in ['да', 'нет']:
         if context.user_data['prev_step'] == 'submit':
             message += 'Введите новые показания:'
@@ -57,7 +60,7 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text='Это сообщение вы видите, если не ответили да/нет'
+            text='Не понял команду. Давайте попробуем снова.'
         )
         if context.user_data['prev_step'] == 'submit':
             return SUBMIT_READINGS
