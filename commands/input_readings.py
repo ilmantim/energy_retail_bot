@@ -34,10 +34,23 @@ def input_readings(update: Update, context: CallbackContext) -> int:
             readings_1 = bill_here.readings
             readings_2 = int(text)
             subtraction = readings_2 - readings_1
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Ваш расход составил {subtraction} квт*ч'
-            )
+            k = readings_2 / readings_1
+            if subtraction > 0 and k < 2:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'Ваш расход составил {subtraction} квт*ч'
+                )
+            else:
+                if subtraction < 0:
+                    message = ('Значение не может быть отрицательным, '
+                               'перепроверьте показания и попробуйте снова.')
+                else:
+                    message = ('Недопустимые данные, перепроверьте показания '
+                               'и попробуйте снова.')
+                update.message.reply_text(
+                    message
+                )
+                return INPUT_READINGS
         bill_here.readings = int(text)
         bill_here.registration_date = timezone.now()
         bill_here.save()
@@ -65,3 +78,8 @@ def input_readings(update: Update, context: CallbackContext) -> int:
         else:
             logger.info('Error: %s', str(response.status_code))
         return handle_start(update, context)
+    else:
+        update.message.reply_text(
+            "Не понял команду. Пожалуйста, введите новые показания:"
+        )
+        return INPUT_READINGS
