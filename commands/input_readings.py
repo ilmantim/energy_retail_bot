@@ -47,8 +47,8 @@ def input_readings(update: Update, context: CallbackContext) -> int:
         )
         data = {
             "id_device": bill_here.id_device,
-            "id_receiving_method": 2,
-            "id_reading_status": 1,
+            "id_receiving_method": 42,
+            "id_reading_status": 6,
             "rates": [
                 {
                     "id_tariff": bill_here.id_tariff,
@@ -57,9 +57,9 @@ def input_readings(update: Update, context: CallbackContext) -> int:
                 }
             ]
         }
-        json_data = json.dumps(data)
+
         url = 'https://lk-api.backspark.ru/api/v0/cabinet/terminal/submitReadings'
-        response = requests.post(url, json=json_data)
+        response = requests.post(url, json=data)
         print(response.content)
         if response.status_code == 200:
             logger.info('Success!')
