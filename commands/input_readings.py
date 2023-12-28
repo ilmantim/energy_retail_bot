@@ -60,7 +60,6 @@ def input_readings(update: Update, context: CallbackContext) -> int:
 
         url = 'https://lk-api.backspark.ru/api/v0/cabinet/terminal/submitReadings'
         response = requests.post(url, json=data)
-        print(response.content)
         if response.status_code == 200:
             logger.info('Success!')
         else:
