@@ -29,7 +29,7 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
     user, is_found = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id)
     context.user_data['chat_id'] = user.chat_id
-    # посылаем запрос, получаем ответ со счетом, если счет есть добавляем в БД
+
     bills = Bill.objects.all()
     if text == "В главное меню":
         context.user_data['prev_step'] = 'main'
@@ -162,7 +162,6 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         user_here = Customer.objects.get(
             chat_id=int(context.user_data['chat_id']))
         if user_here.favorites.count() > 0 and not text == 'Ввести другой':
-            print(context.user_data['prev_step'])
             bills_here = user_here.favorites.all()
             info = [[fav_bill.bill.value] for fav_bill in bills_here]
             update.message.reply_text("Выберите нужный пункт в меню снизу.",

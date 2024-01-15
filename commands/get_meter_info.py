@@ -110,7 +110,8 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                         f'{response_bill["core_devices"][0]["type_house"]} '
                         f'{response_bill["core_devices"][0]["house"]} '
                         f'{response_bill["core_devices"][0]["condos_types"]} '
-                        f'{response_bill["core_devices"][0]["condos_number"]} ')
+                        f'{response_bill["core_devices"][0]["condos_number"]} '
+                    )
                     bill_here.save()
 
                 else:
@@ -140,21 +141,32 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
                     return METER_INFO 
             
             if user_bills.filter(bill__value=bill_here.value).exists():
-                registration_date_str = (
-                    bill_here.registration_date.date().strftime("%Y-%m-%d")
-                    if bill_here.registration_date else "Дата не указана"
-                    )
-                readings_str = str(bill_here.readings) + ' квт*ч' if readings is not None else "Показания не указаны"
-                number_and_type_pu_str = bill_here.number_and_type_pu if date else "Номер и тип ПУ не указаны"
-
-                update.message.reply_text(
-                    f'Лицевой счет: {bill_here.value}\n'
-                    f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                    f'Показания: {readings_str}\n'
-                    f'Дата приёма: {registration_date_str}\n',
-                    reply_markup=go_to_main_menu_keyboard()
-                )
-                return MAIN_MENU
+                print('yoa re here')
+                rates = bill_here.rates.all()
+                for rate_here in rates:
+                    registration_date_str = (
+                        rate_here.registration_date.date().strftime("%Y-%m-%d")
+                        if rate_here.registration_date else "Дата не указана"
+                        )
+                    readings_str = str(rate_here.readings) + ' квт*ч' if rate_here.readings is not None else "Показания не указаны"
+                    number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+                    if not rate_here == bill_here.rates.last():
+                        context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=f'Лицевой счет: {bill_here.value}\n'
+                            f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                            f'Показания: {readings_str}\n'
+                            f'Дата приёма: {registration_date_str}\n'
+                        )
+                    else:
+                        update.message.reply_text(
+                            f'Лицевой счет: {bill_here.value}\n'
+                            f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                            f'Показания: {readings_str}\n'
+                            f'Дата приёма: {registration_date_str}\n',
+                            reply_markup=go_to_main_menu_keyboard()
+                        )
+                        return MAIN_MENU
 
             else:
                 context.user_data['prev_step'] = 'meter'

@@ -52,11 +52,32 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
             )
             return INPUT_READINGS
         elif context.user_data['prev_step'] == 'meter':
-            update.message.reply_text(
-                message,
-                reply_markup=go_to_main_menu_keyboard()
-            )
-            return METER_INFO
+            rates = bill_here.rates.all()
+            for rate_here in rates:
+                registration_date_str = (
+                    rate_here.registration_date.date().strftime("%Y-%m-%d")
+                    if rate_here.registration_date else "Дата не указана"
+                )
+                readings_str = str(
+                    rate_here.readings) + ' квт*ч' if rate_here.readings is not None else "Показания не указаны"
+                number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+                if not rate_here == bill_here.rates.last():
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'Лицевой счет: {bill_here.value}\n'
+                             f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                             f'Показания: {readings_str}\n'
+                             f'Дата приёма: {registration_date_str}\n'
+                    )
+                else:
+                    update.message.reply_text(
+                        f'Лицевой счет: {bill_here.value}\n'
+                        f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                        f'Показания: {readings_str}\n'
+                        f'Дата приёма: {registration_date_str}\n',
+                        reply_markup=go_to_main_menu_keyboard()
+                    )
+                    return MAIN_MENU
 
     else:
         context.bot.send_message(
