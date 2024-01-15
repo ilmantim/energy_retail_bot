@@ -73,28 +73,8 @@ class Bill(models.Model):
         null=True,
         blank=True
     )
-    readings = models.IntegerField(
-        'Показания счетчика',
-        null=True,
-        blank=True
-    )
-    registration_date = models.DateTimeField(
-        'Дата приёма',
-        null=True,
-        blank=True
-    )
     id_device = models.IntegerField(
         'ID счетчика',
-        null=True,
-        blank=True
-    )
-    id_tariff = models.IntegerField(
-        'ID тарифа',
-        null=True,
-        blank=True
-    )
-    id_indication = models.IntegerField(
-        'ID показания',
         null=True,
         blank=True
     )
@@ -119,5 +99,35 @@ class Favorite(models.Model):
         'Избранный или нет',
         null=True,
         blank=True
+    )
+
+
+class Rate(models.Model):
+    id_tariff = models.IntegerField(
+        'ID тарифа',
+        null=True,
+        blank=True
+    )
+    id_indication = models.IntegerField(
+        'ID показания',
+        null=True,
+        blank=True
+    )
+    registration_date = models.DateTimeField(
+        'Дата приёма',
+        null=True,
+        blank=True
+    )
+    readings = models.IntegerField(
+        'Показания счетчика',
+        null=True,
+        blank=True
+    )
+    bill = models.ForeignKey(
+        Bill,
+        verbose_name='ЛС',
+        null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name='rates'
     )
 
