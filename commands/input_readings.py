@@ -30,8 +30,9 @@ def input_readings(update: Update, context: CallbackContext) -> int:
             chat_id=int(context.user_data['chat_id']))
         bill_here = user_here.bills.get(
             value=int(context.user_data['bill_num']))
-        if bill_here.readings:
-            readings_1 = bill_here.readings
+        rate_here = bill_here.rates.get(id=context.user_data['rate'])
+        if rate_here.readings:
+            readings_1 = rate_here.readings
             readings_2 = int(text)
             subtraction = readings_2 - readings_1
             k = readings_2 / readings_1
@@ -51,9 +52,9 @@ def input_readings(update: Update, context: CallbackContext) -> int:
                     message
                 )
                 return INPUT_READINGS
-        bill_here.readings = int(text)
-        bill_here.registration_date = timezone.now()
-        bill_here.save()
+        rate_here.readings = int(text)
+        rate_here.registration_date = timezone.now()
+        rate_here.save()
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=f'Показания сохранены.'
@@ -64,9 +65,9 @@ def input_readings(update: Update, context: CallbackContext) -> int:
             "id_reading_status": 6,
             "rates": [
                 {
-                    "id_tariff": bill_here.id_tariff,
-                    "id_indication": bill_here.id_indication,
-                    "reading": bill_here.readings
+                    "id_tariff": rate_here.id_tariff,
+                    "id_indication": rate_here.id_indication,
+                    "reading": rate_here.readings
                 }
             ]
         }

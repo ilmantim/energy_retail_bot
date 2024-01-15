@@ -23,9 +23,10 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
     text = update.message.text.lower()
     bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
     user_here = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
+    rate_here = bill_here.rates.get(id=context.user_data['rate'])
 
-    registration_date_str = bill_here.registration_date.strftime("%Y-%m-%d") if bill_here.registration_date else "Не указана"
-    readings_str = f'{bill_here.readings} квт*ч' if bill_here.readings is not None else "Не указаны"
+    registration_date_str = rate_here.registration_date.strftime("%Y-%m-%d") if rate_here.registration_date else "Не указана"
+    readings_str = f'{rate_here.readings} квт*ч' if rate_here.readings is not None else "Не указаны"
     number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Не указаны"
 
     message = (

@@ -3,7 +3,7 @@ import logging
 import requests
 from telegram import Update
 from telegram.ext import CallbackContext
-from retail.models import Mro, Bill, Customer, Favorite
+from retail.models import Mro, Bill, Customer, Favorite, Rate
 from datetime import datetime
 from keyboard import yes_or_no_keyboard,\
     go_to_main_menu_keyboard,\
@@ -67,29 +67,49 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
                         )
 
                         bill_here.number_and_type_pu = f'счётчик {response_bill["core_devices"][0]["serial_number"]} на электроснабжение в подъезде'
-                        readings = response_bill["core_devices"][0]["rates"][0]["current_month_reading_value"]
-                        if readings:
-                            bill_here.readings = int(round(float(readings)))
-                        else:
-                            bill_here.readings = None
-                        bill_here.id_device = response_bill["core_devices"][0]["id_meter"]
-                        bill_here.id_tariff = response_bill["core_devices"][0]["rates"][0]["id_tariff"]
-                        bill_here.id_indication = response_bill["core_devices"][0]["rates"][0]["id_indication"]
-                        date = response_bill["core_devices"][0]["rates"][0]["current_month_reading_date"]
-                        if date:
-                            moscow_timezone = timezone.get_fixed_timezone(180)
-                            bill_here.registration_date = timezone.datetime.strptime(
-                                date,
-                                "%Y-%m-%dT%H:%M:%S.%fZ"
-                            ).astimezone(tz=moscow_timezone)
-                        else:
-                            bill_here.registration_date = None
-                        bill_here.address = (f'{response_bill["core_devices"][0]["locality"]} '
-                                             f'{response_bill["core_devices"][0]["street"]} '
-                                             f'{response_bill["core_devices"][0]["type_house"]} '
-                                             f'{response_bill["core_devices"][0]["house"]} '
-                                             f'{response_bill["core_devices"][0]["condos_types"]} '
-                                             f'{response_bill["core_devices"][0]["condos_number"]} ')
+                        bill_here.id_device = response_bill["core_devices"][0][
+                            "id_meter"]
+
+                        for rate_num in range(len(
+                                response_bill["core_devices"][0]["rates"])):
+                            rate_here, created = Rate.objects.get_or_create(
+                                id_tariff=
+                                response_bill["core_devices"][0]["rates"][
+                                    rate_num]["id_tariff"],
+                                id_indication=
+                                response_bill["core_devices"][0]["rates"][0][
+                                    "id_indication"],
+                                bill=bill_here
+                            )
+                            context.user_data['rate'] = rate_here.id
+                            readings = \
+                            response_bill["core_devices"][0]["rates"][
+                                rate_num]["current_month_reading_value"]
+                            if readings:
+                                rate_here.readings = int(
+                                    round(float(readings)))
+                            else:
+                                rate_here.readings = None
+
+                            date = response_bill["core_devices"][0]["rates"][
+                                rate_num]["current_month_reading_date"]
+                            if date:
+                                moscow_timezone = timezone.get_fixed_timezone(
+                                    180)
+                                rate_here.registration_date = timezone.datetime.strptime(
+                                    date,
+                                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                                ).astimezone(tz=moscow_timezone)
+                            else:
+                                rate_here.registration_date = None
+                            rate_here.save()
+                        bill_here.address = (
+                            f'{response_bill["core_devices"][0]["locality"]} '
+                            f'{response_bill["core_devices"][0]["street"]} '
+                            f'{response_bill["core_devices"][0]["type_house"]} '
+                            f'{response_bill["core_devices"][0]["house"]} '
+                            f'{response_bill["core_devices"][0]["condos_types"]} '
+                            f'{response_bill["core_devices"][0]["condos_number"]} ')
                         bill_here.save()
                     else:
                         context.bot.send_message(
