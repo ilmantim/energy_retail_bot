@@ -63,21 +63,6 @@ class Bill(models.Model):
         null=True,
         blank=True
     )
-    address = models.TextField(
-        'адрес счета',
-        null=True,
-        blank=True
-    )
-    number_and_type_pu = models.TextField(
-        'Номер и тип ПУ',
-        null=True,
-        blank=True
-    )
-    id_device = models.IntegerField(
-        'ID счетчика',
-        null=True,
-        blank=True
-    )
 
 
 class Favorite(models.Model):
@@ -102,7 +87,38 @@ class Favorite(models.Model):
     )
 
 
+class Device(models.Model):
+    address = models.TextField(
+        'адрес счета',
+        null=True,
+        blank=True
+    )
+    number_and_type_pu = models.TextField(
+        'Номер и тип ПУ',
+        null=True,
+        blank=True
+    )
+    id_device = models.IntegerField(
+        'ID счетчика',
+        null=True,
+        blank=True
+    )
+    bill = models.ForeignKey(
+        Bill,
+        verbose_name='Лицевой счет',
+        null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name='devices'
+    )
+
+
 class Rate(models.Model):
+    title = models.CharField(
+        'Обозначение',
+        max_length=20,
+        null=True,
+        blank=True
+    )
     id_tariff = models.IntegerField(
         'ID тарифа',
         null=True,
@@ -123,11 +139,10 @@ class Rate(models.Model):
         null=True,
         blank=True
     )
-    bill = models.ForeignKey(
-        Bill,
-        verbose_name='ЛС',
+    device = models.ForeignKey(
+        Device,
+        verbose_name='Устройство',
         null=True, blank=True,
         on_delete=models.CASCADE,
         related_name='rates'
     )
-
