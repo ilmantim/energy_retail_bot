@@ -20,33 +20,53 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
-    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS = range(8)
+MAIN_MENU, REMOVE_FAVORITE_BILLS = 0, 7
+
+
+def get_or_create_user(update: Update) -> Customer:
+    user, _ = Customer.objects.get_or_create(
+        chat_id=update.effective_chat.id
+    )
+    return user
+
+
+def handle_my_accounts(update: Update, context: CallbackContext, user: Customer) -> int:
+    user_bills = [str(favorite.bill.value) for favorite in user.favorites.all()]
+    all_bills = '\n'.join(user_bills)
+    message = 'Ваши лицевые счета:\n' + all_bills
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=message
+    )
+    update.message.reply_text(
+        "Выберите нужный пункт снизу.",
+        reply_markup=show_bills_keyboard()
+    )
+    context.user_data['prev_step'] = 'choose'
+    return REMOVE_FAVORITE_BILLS
+
+
+def update_main_menu(update: Update, context: CallbackContext, user: Customer) -> int:
+    if user.favorites.count() > 0:
+        context.user_data['bills_count'] = user.favorites.count()
+        bills = True
+    else:
+        bills = False
+    update.message.reply_text(
+        "Выберите раздел",
+        reply_markup=main_menu_keyboard(bills)
+    )
+    return MAIN_MENU
 
 
 def handle_main_menu(update: Update, context: CallbackContext) -> int:
+    logger.info("main_menu.py") 
     text = update.message.text
-    logger.info("Главное меню")
+    user = get_or_create_user(update)
 
     if text == "Мои лицевые счета" and context.user_data['bills_count']:
-        user, is_found = Customer.objects.get_or_create(
-            chat_id=update.effective_chat.id
-        )
-
-        user_bills = [str(favorite.bill.value) for favorite in user.favorites.all()]
-        all_bills = '\n'.join(user_bills)
-        message = 'Ваши лицевые счета:\n' + all_bills
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=message
-        )
-        update.message.reply_text(
-            "Выберите нужный пункт снизу.",
-            reply_markup=show_bills_keyboard()
-        )
-        context.user_data['prev_step'] = 'choose'
-        return REMOVE_FAVORITE_BILLS
-    if text == "Передать показания счётчиков":
+        return handle_my_accounts(update, context, user)
+    elif text == "Передать показания счётчиков":
         context.user_data['prev_step'] = 'main'
         return submit_readings(update, context)
     elif text == "Приборы учёта":
@@ -54,33 +74,15 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
     elif text == "Контакты и режим работы":
         return get_contact_info(update, context)
     elif text == "В главное меню":
-        user, is_found = Customer.objects.get_or_create(
-            chat_id=update.effective_chat.id
-        )
-        if user.favorites.count() > 0:
-            context.user_data['bills_count'] = user.favorites.count()
-            bills = True
-        else:
-            bills = False
-        update.message.reply_text("Выберите раздел",
-                                  reply_markup=main_menu_keyboard(bills))
-        return MAIN_MENU
+        return update_main_menu(update, context, user)
     else:
-        user, is_found = Customer.objects.get_or_create(
-            chat_id=update.effective_chat.id
-        )
-        if user.favorites.count() > 0:
-            context.user_data['bills_count'] = user.favorites.count()
-            bills = True
-        else:
-            bills = False
-        update.message.reply_text("Не понял команду. Давайте начнем сначала.",
-                                  reply_markup=main_menu_keyboard(bills))
-        return MAIN_MENU
-    
+        return update_main_menu(update, context, user)  
+
 
 def fallback(update: Update, context: CallbackContext) -> int:
-    logger.warning("Неизвестная команда")
-    update.message.reply_text("Не понял команду. Давайте начнем сначала.",
-                              reply_markup=main_menu_keyboard())
+    logger.warning("fallback")
+    update.message.reply_text(
+        "Не понял команду. Давайте начнем сначала.",
+        reply_markup=main_menu_keyboard()
+    )
     return handle_start(update, context)
