@@ -58,7 +58,7 @@ def main_menu_keyboard(bills=False):
 #     )
 
 
-def submit_readnigs_and_get_meter_keyboard(info=None):
+def submit_readings_and_get_meter_keyboard(info=None):
     if info is None:
         info = [
             ["Как узнать лицевой счёт"],
@@ -74,7 +74,7 @@ def submit_readnigs_and_get_meter_keyboard(info=None):
     )
 
 
-def submit_readnigs_and_get_meter_with_bills_keyboard():
+def submit_readings_and_get_meter_with_bills_keyboard():
     return ReplyKeyboardMarkup([
         ["Здесь должны быть избранные счета"],
         # сюда добавляется избранный счёт
