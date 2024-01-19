@@ -32,20 +32,21 @@ def handle_main_menu(update: Update, context: CallbackContext):
     return handle_start(update, context)
 
 # как узнать номер лицевого счёта
-def handle_get_bill_info(update: Update, context: CallbackContext):
+def handle_get_bill_info(update: Update, context: CallbackContext, calling_context):
     context.user_data['prev_step'] = 'get_bill'
     update.message.reply_text(
-        "Лицевой счёт указан в верхней части квитанции (извещение) рядом с Вашей фамилией \nВведите лицевой счет:",
+        "Лицевой счёт указан в верхней части квитанции (извещение) рядом с Вашей фамилией \nВведите лицевой счёт:",
         reply_markup=submit_readings_and_get_meter_keyboard()
     )
-    return METER_INFO if context == 'get_meter_info' else SUBMIT_READINGS
+    return METER_INFO if calling_context == 'get_meter_info' else SUBMIT_READINGS
+
 
 
 def retrieve_bill_info(bill_id: str):
     #Функция получения id_PA  из API
 
 
-def submit_readings(update: Update, context: CallbackContext, text: str, user: Customer) -> int:
+def submit_readings(update: Update, context: CallbackContext) -> int:
     
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
