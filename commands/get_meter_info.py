@@ -43,14 +43,15 @@ def handle_get_bill_info(update: Update, context: CallbackContext, calling_conte
 
 
 def retrieve_bill_info(bill_id: str):
-    #Функция получения id_PA  из API
+    pass
 
 
 def submit_readings(update: Update, context: CallbackContext) -> int:
+    pass
     
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
-  
+    pass
 
 def digit_checker(update: Update, context: CallbackContext) -> int:
     text = update.message.text
