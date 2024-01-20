@@ -4,6 +4,7 @@ import logging
 
 from dotenv import load_dotenv
 
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
 django.setup()
 
@@ -20,6 +21,7 @@ from commands.get_meter_info import get_meter_info
 from commands.get_contact_info import get_contact_info
 from commands.create_favorite_bill import create_favorite_bill
 from commands.remove_favorite_bill import remove_favorite_bill
+from commands.before_input_readings import before_input_readings
 
 
 logging.basicConfig(
@@ -29,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
-    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS = range(8)
+    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS, BEFORE_INPUT_READINGS = range(9)
 
 
 def main() -> None:
@@ -58,7 +60,9 @@ def main() -> None:
             CREATE_FAVORITE_BILL: [MessageHandler(Filters.text & ~Filters.command,
                                              create_favorite_bill)],
             REMOVE_FAVORITE_BILLS: [MessageHandler(Filters.text & ~Filters.command,
-                                           remove_favorite_bill)],   
+                                           remove_favorite_bill)],
+            BEFORE_INPUT_READINGS: [MessageHandler(Filters.text & ~Filters.command,
+                                            before_input_readings)],
         },
         fallbacks=[
             CommandHandler('start', handle_start),

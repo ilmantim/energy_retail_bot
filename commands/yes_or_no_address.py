@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
-    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS = range(8)
+    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS, BEFORE_INPUT_READINGS = range(9)
 
 
 def yes_or_no_address(update: Update, context: CallbackContext) -> int:
@@ -37,7 +37,7 @@ def yes_or_no_address(update: Update, context: CallbackContext) -> int:
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text='Это сообщение вы видите, если не ответили да/нет'
+            text='Не понял команду. Давайте начнем сначала.'
         )
         if context.user_data['prev_step'] == 'submit':
             return SUBMIT_READINGS

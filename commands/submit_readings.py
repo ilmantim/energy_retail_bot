@@ -17,8 +17,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-(MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,
- CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS) = range(8)
+MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
+    CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS, BEFORE_INPUT_READINGS = range(9)
 API_BASE_URL = "https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal"
 MAIN_MENU_COMMAND = "В главное меню"
 GET_BILL_INFO_COMMAND = "Как узнать лицевой счёт"
@@ -88,6 +88,7 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     print(text)
     chat_id = update.effective_chat.id
+    context.user_data['chat_id'] = chat_id
     user, _ = Customer.objects.get_or_create(chat_id=chat_id)
     bill_id = str(text)
     bills = Bill.objects.all()
@@ -162,6 +163,7 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                 )
                 return SUBMIT_READINGS
         user_bills = Favorite.objects.filter(customer=user)
+        ##########################################################
         if user_bills.filter(bill__value=bill_here.value).exists():
 
             registration_date_str = (
@@ -181,10 +183,11 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                 reply_markup=go_to_main_menu_keyboard()
             )
             return INPUT_READINGS
-
+        ##########################################################
         else:
             context.user_data['prev_step'] = 'submit'
-            message = f'Адрес объекта - {bill_here.address}?'
+            device_here = bill_here.devices.first()
+            message = f'Адрес объекта - {device_here.address}?'
             update.message.reply_text(message,
                                       reply_markup=yes_or_no_keyboard())
             return YES_OR_NO_ADDRESS
