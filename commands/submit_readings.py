@@ -4,6 +4,8 @@ import pprint
 import requests
 from telegram import Update
 from telegram.ext import CallbackContext
+
+from commands.before_input_readings import before_input_readings
 from retail.models import Mro, Bill, Customer, Favorite, Rate, Device
 from datetime import datetime
 from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, submit_readings_and_get_meter_keyboard
@@ -166,23 +168,15 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
         ##########################################################
         if user_bills.filter(bill__value=bill_here.value).exists():
 
-            registration_date_str = (
-                bill_here.registration_date.date().strftime("%Y-%m-%d")
-                if bill_here.registration_date else "Дата не указана"
-            )
-            readings_str = str(
-                bill_here.readings) + ' квт*ч' if readings is not None else "Показания не указаны"
-            number_and_type_pu_str = bill_here.number_and_type_pu if date else "Номер и тип ПУ не указаны"
-
-            update.message.reply_text(
-                f'Лицевой счет: {bill_here.value}\n'
-                f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                f'Показания: {readings_str}\n'
-                f'Дата приёма: {registration_date_str}\n'
-                'Введите новые показания:',
-                reply_markup=go_to_main_menu_keyboard()
-            )
-            return INPUT_READINGS
+            devices_here = bill_here.devices.all()
+            rates_ids = [rate.id for device in devices_here for rate in
+                         device.rates.all()]
+            context.user_data['rates_ids'] = rates_ids
+            context.user_data['non_deletable_rates_ids'] = rates_ids.copy()
+            print(context.user_data['rates_ids'])
+            context.user_data['prev_step'] = 'fav'
+            print("YO ARE HERE 1")
+            return before_input_readings(update, context)
         ##########################################################
         else:
             context.user_data['prev_step'] = 'submit'

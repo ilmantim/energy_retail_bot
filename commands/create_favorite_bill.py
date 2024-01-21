@@ -2,7 +2,8 @@ import logging
 
 from telegram import Update
 from telegram.ext import CallbackContext
-    
+
+from commands.before_input_readings import before_input_readings
 from retail.models import Bill, Customer, Favorite
 from keyboard import go_to_main_menu_keyboard
 
@@ -23,18 +24,6 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
     text = update.message.text.lower()
     bill_here = Bill.objects.get(value=int(context.user_data['bill_num']))
     user_here = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
-    rate_here = bill_here.rates.get(id=context.user_data['rate'])
-
-    registration_date_str = rate_here.registration_date.strftime("%Y-%m-%d") if rate_here.registration_date else "Не указана"
-    readings_str = f'{rate_here.readings} квт*ч' if rate_here.readings is not None else "Не указаны"
-    number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Не указаны"
-
-    message = (
-        f'Лицевой счет: {bill_here.value}\n'
-        f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-        f'Показания: {readings_str}\n'
-        f'Дата приёма: {registration_date_str}\n'
-    )
 
     if text == 'да':
         bill_here.customers.add(user_here)
@@ -45,13 +34,16 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
 
     if text in ['да', 'нет']:
         if context.user_data['prev_step'] == 'submit':
-            message += 'Введите новые показания:'
-            update.message.reply_text(
-                message,
-                reply_markup=go_to_main_menu_keyboard()
-            )
-            return INPUT_READINGS
+            devices_here = bill_here.devices.all()
+            rates_ids = [rate.id for device in devices_here for rate in device.rates.all()]
+            context.user_data['rates_ids'] = rates_ids
+            context.user_data['non_deletable_rates_ids'] = rates_ids.copy()
+            print(context.user_data['rates_ids'])
+            context.user_data['prev_step'] = 'fav'
+            print("YO ARE HERE 1")
+            return before_input_readings(update, context)
         elif context.user_data['prev_step'] == 'meter':
+            ##############################################################
             rates = bill_here.rates.all()
             for rate_here in rates:
                 registration_date_str = (
@@ -78,7 +70,7 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
                         reply_markup=go_to_main_menu_keyboard()
                     )
                     return MAIN_MENU
-
+            ##############################################################
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
