@@ -17,11 +17,11 @@ MAIN_MENU = 0
 
 
 def get_or_create_customer(update: Update, context: CallbackContext) -> tuple:
-    user, is_found = Customer.objects.get_or_create(
+    user, created = Customer.objects.get_or_create(
         chat_id=update.effective_chat.id
     )
     context.user_data['chat_id'] = user.chat_id
-    return user, is_found
+    return user, created
 
 
 def check_user_bills(user) -> bool:

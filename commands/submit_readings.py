@@ -1,5 +1,4 @@
 import logging
-import pprint
 
 import requests
 from telegram import Update
@@ -88,7 +87,6 @@ def retrieve_bill_info(bill_id: str):
 
 def process_reading_submission(update: Update, context: CallbackContext) -> int:
     text = update.message.text
-    print(text)
     chat_id = update.effective_chat.id
     context.user_data['chat_id'] = chat_id
     user, _ = Customer.objects.get_or_create(chat_id=chat_id)
@@ -98,7 +96,6 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
     try:
         if ((text.isdigit() and not context.user_data['prev_step'] == 'choose') or (text.isdigit() and user_bills.filter(bill__value=bills.get(value=int(text)).value).exists())):
             response_bill = retrieve_bill_info(bill_id)
-            print(response_bill)
             if text in response_bill.values():
                 context.user_data['bill_num'] = text
                 bill_here, created = Bill.objects.get_or_create(
@@ -164,27 +161,23 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                     text="Не удалось найти счет."
                 )
                 return SUBMIT_READINGS
-        user_bills = Favorite.objects.filter(customer=user)
-        ##########################################################
-        if user_bills.filter(bill__value=bill_here.value).exists():
+            user_bills = Favorite.objects.filter(customer=user)
+            if user_bills.filter(bill__value=bill_here.value).exists():
 
-            devices_here = bill_here.devices.all()
-            rates_ids = [rate.id for device in devices_here for rate in
-                         device.rates.all()]
-            context.user_data['rates_ids'] = rates_ids
-            context.user_data['non_deletable_rates_ids'] = rates_ids.copy()
-            print(context.user_data['rates_ids'])
-            context.user_data['prev_step'] = 'fav'
-            print("YO ARE HERE 1")
-            return before_input_readings(update, context)
-        ##########################################################
-        else:
-            context.user_data['prev_step'] = 'submit'
-            device_here = bill_here.devices.first()
-            message = f'Адрес объекта - {device_here.address}?'
-            update.message.reply_text(message,
-                                      reply_markup=yes_or_no_keyboard())
-            return YES_OR_NO_ADDRESS
+                devices_here = bill_here.devices.all()
+                rates_ids = [rate.id for device in devices_here for rate in
+                             device.rates.all()]
+                context.user_data['rates_ids'] = rates_ids
+                context.user_data['non_deletable_rates_ids'] = rates_ids.copy()
+                context.user_data['prev_step'] = 'fav'
+                return before_input_readings(update, context)
+            else:
+                context.user_data['prev_step'] = 'submit'
+                device_here = bill_here.devices.first()
+                message = f'Адрес объекта - {device_here.address}?'
+                update.message.reply_text(message,
+                                          reply_markup=yes_or_no_keyboard())
+                return YES_OR_NO_ADDRESS
 
     except Exception as e:
         logger.info(f'Exception occurred:{e}')

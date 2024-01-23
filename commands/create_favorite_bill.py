@@ -1,7 +1,7 @@
 import logging
 
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, ConversationHandler
 
 from commands.before_input_readings import before_input_readings
 from retail.models import Bill, Customer, Favorite
@@ -38,39 +38,37 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
             rates_ids = [rate.id for device in devices_here for rate in device.rates.all()]
             context.user_data['rates_ids'] = rates_ids
             context.user_data['non_deletable_rates_ids'] = rates_ids.copy()
-            print(context.user_data['rates_ids'])
             context.user_data['prev_step'] = 'fav'
-            print("YO ARE HERE 1")
             return before_input_readings(update, context)
         elif context.user_data['prev_step'] == 'meter':
-            ##############################################################
-            rates = bill_here.rates.all()
-            for rate_here in rates:
-                registration_date_str = (
-                    rate_here.registration_date.date().strftime("%Y-%m-%d")
-                    if rate_here.registration_date else "Дата не указана"
-                )
-                readings_str = str(
-                    rate_here.readings) + ' квт*ч' if rate_here.readings is not None else "Показания не указаны"
-                number_and_type_pu_str = bill_here.number_and_type_pu if bill_here.number_and_type_pu else "Номер и тип ПУ не указаны"
-                if not rate_here == bill_here.rates.last():
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f'Лицевой счет: {bill_here.value}\n'
-                             f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                             f'Показания: {readings_str}\n'
-                             f'Дата приёма: {registration_date_str}\n'
+            devices = bill_here.devices.all()
+            for device_here in devices:
+                rates = device_here.rates.all()
+                for rate_here in rates:
+                    registration_date_str = (
+                        rate_here.registration_date.date().strftime("%Y-%m-%d")
+                        if rate_here.registration_date else "Дата не указана"
                     )
-                else:
-                    update.message.reply_text(
-                        f'Лицевой счет: {bill_here.value}\n'
-                        f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                        f'Показания: {readings_str}\n'
-                        f'Дата приёма: {registration_date_str}\n',
-                        reply_markup=go_to_main_menu_keyboard()
-                    )
-                    return MAIN_MENU
-            ##############################################################
+                    readings_str = str(
+                        rate_here.readings) + ' квт*ч' if rate_here.readings is not None else "Показания не указаны"
+                    number_and_type_pu_str = device_here.number_and_type_pu if device_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+                    if not device_here == bill_here.devices.last() or not rate_here == device_here.rates.last():
+                        context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=f'Лицевой счет: {bill_here.value}\n'
+                                 f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                                 f'Показания: {readings_str}\n'
+                                 f'Дата приёма: {registration_date_str}\n'
+                        )
+                    else:
+                        update.message.reply_text(
+                            f'Лицевой счет: {bill_here.value}\n'
+                            f'Номер и тип ПУ: {number_and_type_pu_str}\n'
+                            f'Показания: {readings_str}\n'
+                            f'Дата приёма: {registration_date_str}\n',
+                            reply_markup=go_to_main_menu_keyboard()
+                        )
+                        return MAIN_MENU
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
