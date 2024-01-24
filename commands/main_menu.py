@@ -64,7 +64,7 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     user = get_or_create_user(update)
 
-    if text == "Мои лицевые счета" and context.user_data['bills_count']:
+    if text == "Мои лицевые счета" and user.favorites.count() > 0:
         return handle_my_accounts(update, context, user)
     elif text == "Передать показания счётчиков":
         context.user_data['prev_step'] = 'main'
