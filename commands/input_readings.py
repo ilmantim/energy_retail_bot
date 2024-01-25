@@ -70,7 +70,7 @@ def input_readings(update: Update, context: CallbackContext) -> int:
             data = [
                 {
                     "id_device": device.id_device,
-                    "id_receiving_method": 42,
+                    "id_receiving_method": 60,
                     "id_reading_status": 6,
                     "rates": [
                         {
