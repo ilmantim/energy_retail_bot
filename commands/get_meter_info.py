@@ -140,7 +140,6 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                 return METER_INFO
 
             user_bills = Favorite.objects.filter(customer=user)
-            ##########################################################
             if user_bills.filter(bill__value=bill_here.value).exists():
                 devices = bill_here.devices.all()
                 for device_here in devices:
@@ -170,7 +169,6 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                                 reply_markup=go_to_main_menu_keyboard()
                             )
                             return MAIN_MENU
-            ##########################################################
             else:
                 context.user_data['prev_step'] = 'meter'
                 device_here = bill_here.devices.first()
