@@ -19,8 +19,6 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
 API_BASE_URL = "https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal"
 MAIN_MENU_COMMAND = "В главное меню"
 GET_BILL_INFO_COMMAND = "Как узнать лицевой счёт"
-READING_PERIOD_START = 15
-READING_PERIOD_END = 25
 MOSCOW_TIMEZONE_OFFSET = 180
 
 
@@ -32,19 +30,9 @@ def get_meter_info(update: Update, context: CallbackContext) -> int:
         return handle_main_menu(update, context)
     elif text == GET_BILL_INFO_COMMAND:
         return handle_get_bill_info(update, context)
-
-    if check_reading_period():
-        return process_meter_info(update, context)
     else:
-        update.message.reply_text(
-            "Показания принимаются с 15 по 25 число каждого месяца."
-        )
-        return MAIN_MENU
+        return process_meter_info(update, context)
 
-
-def check_reading_period():
-    today = datetime.now()
-    return READING_PERIOD_START <= today.day <= READING_PERIOD_END
 
 
 # в главное меню
@@ -147,7 +135,9 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                     chat_id=update.effective_chat.id,
                     text="Не удалось найти счет."
                 )
+                print("Не удалось найти счет.")
                 return METER_INFO
+
             user_bills = Favorite.objects.filter(customer=user)
             ##########################################################
             if user_bills.filter(bill__value=bill_here.value).exists():
