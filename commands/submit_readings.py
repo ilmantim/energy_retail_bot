@@ -41,7 +41,8 @@ def submit_readings(update: Update, context: CallbackContext) -> int:
         return process_reading_submission(update, context)
     else:
         update.message.reply_text(
-            "Показания принимаются с 15 по 25 число каждого месяца."
+            "Показания принимаются с 15 по 25 число каждого месяца.",
+            reply_markup=go_to_main_menu_keyboard()
         )
         return MAIN_MENU
 
