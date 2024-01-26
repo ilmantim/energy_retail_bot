@@ -4,7 +4,6 @@ from telegram import Update
 from telegram.ext import CallbackContext
 from retail.models import Customer  
 from keyboard import main_menu_keyboard
-from messages import HELLO
 
 
 logging.basicConfig(
@@ -52,7 +51,13 @@ def handle_start(update: Update, context: CallbackContext) -> int:
         send_start_message(update, has_bills)
     else:
         context.user_data['has_started'] = True
-        update.message.reply_text(HELLO)
+        update.message.reply_text(
+            "Здравствуйте!\nВас приветствует чат-бот АО «Чувашская энергосбытовая компания»\n"
+            "\n"
+            "Здесь Вы сможете передавать показания\n"
+            "приборов учёта, узнать информацию об ИПУ\n"
+            "и получить контактную информацию."
+        )
         send_start_message(update)
 
     return MAIN_MENU
