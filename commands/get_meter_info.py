@@ -66,7 +66,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                 text.isdigit() and user_bills.filter(
                 bill__value=bills.get(value=int(text)).value).exists())):
             response_bill = retrieve_bill_info(bill_id)
-            if text in response_bill.values():
+            if response_bill and text in response_bill.values():
                 context.user_data['bill_num'] = text
                 bill_here, created = Bill.objects.get_or_create(
                     value=int(text))
