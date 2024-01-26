@@ -133,7 +133,8 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
             else:
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text="Не удалось найти счет."
+                    text="Не удалось найти счет.",
+                    reply_markup=submit_readings_and_get_meter_keyboard()
                 )
                 print("Не удалось найти счет.")
                 return METER_INFO
