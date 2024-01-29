@@ -47,26 +47,29 @@ def main() -> None:
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', handle_start)],
+        entry_points=[MessageHandler(Filters.text, handle_start)],
         states={
             MAIN_MENU: [MessageHandler(Filters.text & ~Filters.command,
                                        handle_main_menu)],
             SUBMIT_READINGS: [MessageHandler(Filters.text & ~Filters.command,
                                              submit_readings)],
             INPUT_READINGS: [MessageHandler(Filters.text & ~Filters.command,
-                                           input_readings)],
+                                            input_readings)],
             YES_OR_NO_ADDRESS: [MessageHandler(Filters.text & ~Filters.command,
                                                yes_or_no_address)],
             METER_INFO: [MessageHandler(Filters.text & ~Filters.command,
                                         get_meter_info)],
             CONTACT_INFO: [MessageHandler(Filters.text & ~Filters.command,
                                           get_contact_info)],
-            CREATE_FAVORITE_BILL: [MessageHandler(Filters.text & ~Filters.command,
-                                             create_favorite_bill)],
-            REMOVE_FAVORITE_BILLS: [MessageHandler(Filters.text & ~Filters.command,
-                                           remove_favorite_bill)],
-            BEFORE_INPUT_READINGS: [MessageHandler(Filters.text & ~Filters.command,
-                                            before_input_readings)],
+            CREATE_FAVORITE_BILL: [
+                MessageHandler(Filters.text & ~Filters.command,
+                               create_favorite_bill)],
+            REMOVE_FAVORITE_BILLS: [
+                MessageHandler(Filters.text & ~Filters.command,
+                               remove_favorite_bill)],
+            BEFORE_INPUT_READINGS: [
+                MessageHandler(Filters.text & ~Filters.command,
+                               before_input_readings)],
         },
         fallbacks=[
             CommandHandler('start', handle_start),

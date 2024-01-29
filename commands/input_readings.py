@@ -61,12 +61,9 @@ def input_readings(update: Update, context: CallbackContext) -> int:
             return before_input_readings(update, context)
         else:
             del context.user_data['rates_ids'][0]
-            print(context.user_data['non_deletable_rates_ids'])
             rates = [Rate.objects.get(id=id) for id in
                      context.user_data['non_deletable_rates_ids']]
-            print(rates)
             devices = list({rate.device for rate in rates})
-            print(devices)
             data = [
                 {
                     "id_device": device.id_device,
