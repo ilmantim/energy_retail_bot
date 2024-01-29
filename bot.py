@@ -9,7 +9,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'energy_retail_bot.settings')
 django.setup()
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters,\
-      ConversationHandler, PicklePersistence
+      ConversationHandler
 
 from commands.start import handle_start
 from commands.main_menu import fallback
@@ -39,11 +39,7 @@ def main() -> None:
 
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
-    # Create a PicklePersistence object
-    persistence = PicklePersistence(filename='bot_data')
-
-    # Pass the persistence object to the Updater
-    updater = Updater(TELEGRAM_TOKEN, use_context=True, persistence=persistence)
+    updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
