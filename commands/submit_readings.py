@@ -1,16 +1,16 @@
 import logging
+from datetime import datetime
 
 import requests
+from django.utils import timezone
 from telegram import Update
 from telegram.ext import CallbackContext
 
 from commands.before_input_readings import before_input_readings
-from retail.models import Mro, Bill, Customer, Favorite, Rate, Device
-from datetime import datetime
-from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, submit_readings_and_get_meter_keyboard
 from commands.start import handle_start
-from django.utils import timezone
-
+from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, \
+    submit_readings_and_get_meter_keyboard
+from retail.models import Bill, Customer, Favorite, Rate, Device
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -24,7 +24,7 @@ API_BASE_URL = "https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal"
 MAIN_MENU_COMMAND = "В главное меню"
 GET_BILL_INFO_COMMAND = "Как узнать лицевой счёт"
 READING_PERIOD_START = 15
-READING_PERIOD_END = 25
+READING_PERIOD_END = 31
 MOSCOW_TIMEZONE_OFFSET = 180
 
 
@@ -138,12 +138,17 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                         date = response_bill["core_devices"][device_num]["rates"][
                             rate_num]["current_month_reading_date"]
                         if date:
-                            moscow_timezone = timezone.get_fixed_timezone(
-                                180)
-                            rate_here.registration_date = timezone.datetime.strptime(
-                                date,
-                                "%Y-%m-%dT%H:%M:%S.%fZ"
-                            ).astimezone(tz=moscow_timezone)
+                            moscow_timezone = timezone.get_fixed_timezone(180)
+                            try:
+                                rate_here.registration_date = timezone.datetime.strptime(
+                                    date,
+                                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                                ).astimezone(tz=moscow_timezone)
+                            except ValueError:
+                                rate_here.registration_date = timezone.datetime.strptime(
+                                    date,
+                                    "%Y-%m-%dT%H:%M:%SZ"
+                                ).astimezone(tz=moscow_timezone)
                         else:
                             rate_here.registration_date = None
                         rate_here.save()

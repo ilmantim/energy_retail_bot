@@ -112,12 +112,17 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                         response_bill["core_devices"][device_num]["rates"][
                             rate_num]["current_month_reading_date"]
                         if date:
-                            moscow_timezone = timezone.get_fixed_timezone(
-                                180)
-                            rate_here.registration_date = timezone.datetime.strptime(
-                                date,
-                                "%Y-%m-%dT%H:%M:%S.%fZ"
-                            ).astimezone(tz=moscow_timezone)
+                            moscow_timezone = timezone.get_fixed_timezone(180)
+                            try:
+                                rate_here.registration_date = timezone.datetime.strptime(
+                                    date,
+                                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                                ).astimezone(tz=moscow_timezone)
+                            except ValueError:
+                                rate_here.registration_date = timezone.datetime.strptime(
+                                    date,
+                                    "%Y-%m-%dT%H:%M:%SZ"
+                                ).astimezone(tz=moscow_timezone)
                         else:
                             rate_here.registration_date = None
                         rate_here.save()
