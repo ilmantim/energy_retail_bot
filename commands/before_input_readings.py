@@ -1,5 +1,4 @@
 import logging
-import pprint
 
 import requests
 from telegram import Update
@@ -22,11 +21,7 @@ logger = logging.getLogger(__name__)
 
 def before_input_readings(update: Update, context: CallbackContext) -> int:
     text = update.message.text
-    print("YO ARE HERE 2")
     if context.user_data['prev_step'] == 'fav' or text.isdigit():
-        print("YO ARE HERE 3")
-        print(context.user_data['non_deletable_rates_ids'])
-        print(context.user_data['rates_ids'])
         rate_here = Rate.objects.get(id=context.user_data['rates_ids'][0])
 
         registration_date_str = rate_here.registration_date.strftime(

@@ -1,5 +1,4 @@
 import logging
-import pprint
 
 import requests
 from telegram import Update
@@ -78,7 +77,6 @@ def input_readings(update: Update, context: CallbackContext) -> int:
                     ]
                 } for device in devices
             ]
-            pprint.pprint(data)
             url = 'https://lk-api.backspark.ru/api/v0/cabinet/terminal/submitReadings'
             for device_data in data:
                 response = requests.post(url, json=device_data)
