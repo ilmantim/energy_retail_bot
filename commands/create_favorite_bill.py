@@ -68,7 +68,7 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
                             f'Дата приёма: {registration_date_str}\n',
                             reply_markup=go_to_main_menu_keyboard()
                         )
-                        return MAIN_MENU
+                        return ConversationHandler.END
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,

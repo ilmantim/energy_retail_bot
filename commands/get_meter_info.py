@@ -173,7 +173,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                                 f'Дата приёма: {registration_date_str}\n',
                                 reply_markup=go_to_main_menu_keyboard()
                             )
-                            return MAIN_MENU
+                            return ConversationHandler.END
             else:
                 context.user_data['prev_step'] = 'meter'
                 device_here = bill_here.devices.first()

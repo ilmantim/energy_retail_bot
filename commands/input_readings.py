@@ -2,7 +2,7 @@ import logging
 
 import requests
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, ConversationHandler
 
 from commands.before_input_readings import before_input_readings
 from retail.models import Customer, Rate
@@ -84,7 +84,7 @@ def input_readings(update: Update, context: CallbackContext) -> int:
                     logger.info('Success!')
                 else:
                     logger.info('Error: %s', str(response.status_code))
-            return handle_start(update, context)
+            return ConversationHandler.END
     else:
         update.message.reply_text(
             "Не понял команду. Пожалуйста, введите новые показания:"
