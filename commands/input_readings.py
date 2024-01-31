@@ -1,11 +1,15 @@
 import logging
+import pprint
+
+import os
+from dotenv import load_dotenv
 
 import requests
 from telegram import Update
 from telegram.ext import CallbackContext, ConversationHandler
 
 from commands.before_input_readings import before_input_readings
-from retail.models import Customer, Rate
+from retail.models import Rate
 from django.utils import timezone
 
 from commands.start import handle_start
@@ -20,6 +24,9 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO, \
     CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS, BEFORE_INPUT_READINGS = range(
     9)
 
+load_dotenv()
+
+API_BASE_URL = os.getenv('API_BASE_URL')
 
 def input_readings(update: Update, context: CallbackContext) -> int:
     text = update.message.text
@@ -77,7 +84,8 @@ def input_readings(update: Update, context: CallbackContext) -> int:
                     ]
                 } for device in devices
             ]
-            url = 'https://lk-api.backspark.ru/api/v0/cabinet/terminal/submitReadings'
+            pprint.pprint(data)
+            url = f'{API_BASE_URL}/api/v0/cabinet/terminal/submitReadings'
             for device_data in data:
                 response = requests.post(url, json=device_data)
                 if response.status_code == 200:

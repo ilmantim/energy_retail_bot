@@ -1,16 +1,19 @@
 import logging
-from datetime import datetime
+
+import os
+from dotenv import load_dotenv
 
 import requests
-from django.utils import timezone
 from telegram import Update
 from telegram.ext import CallbackContext
 
 from commands.before_input_readings import before_input_readings
-from commands.start import handle_start
-from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, \
-    submit_readings_and_get_meter_keyboard
 from retail.models import Bill, Customer, Favorite, Rate, Device
+from datetime import datetime
+from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, submit_readings_and_get_meter_keyboard
+from commands.start import handle_start
+from django.utils import timezone
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -20,10 +23,14 @@ logger = logging.getLogger(__name__)
 
 MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
     CONTACT_INFO, CREATE_FAVORITE_BILL, REMOVE_FAVORITE_BILLS, BEFORE_INPUT_READINGS = range(9)
-API_BASE_URL = "https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal"
+
+load_dotenv()
+
+API_BASE_URL = os.getenv('API_BASE_URL')
+
 MAIN_MENU_COMMAND = "В главное меню"
 GET_BILL_INFO_COMMAND = "Как узнать лицевой счёт"
-READING_PERIOD_START = 15
+READING_PERIOD_START = 1
 READING_PERIOD_END = 31
 MOSCOW_TIMEZONE_OFFSET = 180
 
@@ -69,15 +76,16 @@ def handle_get_bill_info(update: Update, context: CallbackContext):
 
 def retrieve_bill_info(bill_id: str):
     url_for_id = (
-        f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/"
+        f"{API_BASE_URL}/api/v0/cabinet/terminal/"
         f"getAccounts/{bill_id}"
     )
+
     response = requests.get(url_for_id)
     response.raise_for_status()
     response_id = response.json()
     if response_id and "id_PA" in response_id[0]:
         id_PA = str(response_id[0]["id_PA"])
-        url_for_bill = f"https://lk-api-dev.backspark.ru/api/v0/cabinet/terminal/getAccountInfo/{id_PA}"
+        url_for_bill = f"{API_BASE_URL}/api/v0/cabinet/terminal/getAccountInfo/{id_PA}"
         response = requests.get(url_for_bill)
         response.raise_for_status()
         response_bill = response.json()
@@ -164,7 +172,13 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
             else:
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text="Не удалось найти счет.",
+                    text="Проверьте правильность введения номера лицевого счета.\n"
+                         "Возможно, по данному адресу приборы учёта отсутствуют или закончился срок поверки.\n"
+                         "Для уточнения информации обратитесь к специалисту контакт-центра",
+                )
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Введите лицевой счёт",
                     reply_markup=submit_readings_and_get_meter_keyboard()
                 )
                 return SUBMIT_READINGS

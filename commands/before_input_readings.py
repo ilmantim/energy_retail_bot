@@ -1,13 +1,11 @@
 import logging
 
-import requests
 from telegram import Update
 from telegram.ext import CallbackContext
-from retail.models import Mro, Bill, Customer, Favorite, Rate, Device
-from datetime import datetime
-from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, submit_readings_and_get_meter_keyboard
+from retail.models import Rate
+
+from keyboard import go_to_main_menu_keyboard
 from commands.start import handle_start
-from django.utils import timezone
 
 
 logging.basicConfig(
@@ -21,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 def before_input_readings(update: Update, context: CallbackContext) -> int:
     text = update.message.text
+
     if context.user_data['prev_step'] == 'fav' or text.isdigit():
         rate_here = Rate.objects.get(id=context.user_data['rates_ids'][0])
 
