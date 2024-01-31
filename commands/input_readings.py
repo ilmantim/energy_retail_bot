@@ -84,7 +84,6 @@ def input_readings(update: Update, context: CallbackContext) -> int:
                     ]
                 } for device in devices
             ]
-            pprint.pprint(data)
             url = f'{API_BASE_URL}/api/v0/cabinet/terminal/submitReadings'
             for device_data in data:
                 response = requests.post(url, json=device_data)

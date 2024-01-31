@@ -129,7 +129,7 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                             response_bill["core_devices"][device_num]["rates"][
                                 rate_num]["id_tariff"],
                             id_indication=
-                            response_bill["core_devices"][device_num]["rates"][0][
+                            response_bill["core_devices"][device_num]["rates"][rate_num][
                                 "id_indication"],
                             device=device_here
                         )

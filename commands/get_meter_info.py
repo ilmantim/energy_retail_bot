@@ -91,7 +91,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                                 rate_num]["id_tariff"],
                             id_indication=
                             response_bill["core_devices"][device_num]["rates"][
-                                0][
+                                rate_num][
                                 "id_indication"],
                             device=device_here
                         )

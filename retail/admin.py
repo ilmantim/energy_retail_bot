@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from retail.models import Mro, Customer, Bill, Address
+from retail.models import Mro, Customer, Bill, Address, Rate
 
 
 # Register your models here.
@@ -22,3 +22,8 @@ class CustomerAdmin(admin.ModelAdmin):
 @admin.register(Bill)
 class BillAdmin(admin.ModelAdmin):
     list_display = ('value', )
+
+
+@admin.register(Rate)
+class RateAdmin(admin.ModelAdmin):
+    pass
