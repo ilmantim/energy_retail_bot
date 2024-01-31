@@ -82,18 +82,19 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                     for rate_num in range(len(
                             response_bill["core_devices"][device_num][
                                 "rates"])):
-                        rate_here, created = Rate.objects.get_or_create(
+                        rate_here, created = Rate.objects.update_or_create(
                             title=
                             response_bill["core_devices"][device_num]["rates"][
                                 rate_num]["title"],
                             id_tariff=
                             response_bill["core_devices"][device_num]["rates"][
                                 rate_num]["id_tariff"],
-                            id_indication=
-                            response_bill["core_devices"][device_num]["rates"][
-                                rate_num][
-                                "id_indication"],
-                            device=device_here
+                            device=device_here,
+                            defaults={
+                                'id_indication':
+                                    response_bill["core_devices"][device_num][
+                                        "rates"][rate_num]["id_indication"]
+                            }
                         )
                         context.user_data['rate'] = rate_here.id
                         readings = \
