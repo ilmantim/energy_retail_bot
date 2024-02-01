@@ -28,6 +28,7 @@ load_dotenv()
 
 API_BASE_URL = os.getenv('API_BASE_URL')
 
+
 def input_readings(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     if text == "В главное меню":
@@ -39,7 +40,7 @@ def input_readings(update: Update, context: CallbackContext) -> int:
             readings_2 = int(text)
             subtraction = readings_2 - readings_1
             k = readings_2 / readings_1
-            if subtraction > 0 and k < 2:
+            if subtraction > 0 and k <= 2:
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=f'Ваш расход составил {subtraction} квт*ч'
