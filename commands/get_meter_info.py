@@ -180,11 +180,13 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                                      f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
                                      f'- Номер счетчика: {serial_number}\n'
                                      f'- Величина тарифа: \n'
-                                     f'  - {title}:{cost} ₽\n'
+                                     #f'  - {rate_here.title}:{rate_here_cost} ₽\n'
                                      f'-----------------------------------\n'
+                                     #######ЭТОТ ТУТ НЕ НУЖНО, ОТСАВИЛ, ЧТОБЫ НЕ СЛОМАТЬ КОД#########
                                      f'Номер и тип ПУ: {number_and_type_pu_str}\n'
                                      f'Показания: {readings_str}\n'
                                      f'Дата приёма: {registration_date_str}\n'
+                                     ###################################################################
                             )
                         else:
                             update.message.reply_text(
@@ -192,11 +194,15 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                                 f'-----------------------------------\n'
                                 f'- Лицевой счет: {bill_here.value}\n'
                                 f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
-                                f'Номер и тип ПУ: {number_and_type_pu_str}\n'
                                 f'- Номер счетчика: {serial_number}\n'
+                                f'- Величина тарифа: \n'
+                                #f'  - {rate_here.title}:{rate_here_cost} ₽\n'
+                                f'-----------------------------------\n'
+                                #######ЭТОТ ТУТ НЕ НУЖНО, ОТСАВИЛ, ЧТОБЫ НЕ СЛОМАТЬ КОД#########
+                                f'Номер и тип ПУ: {number_and_type_pu_str}\n'
                                 f'Показания: {readings_str}\n'
-                                f'Дата приёма: {registration_date_str}\n'
-                                f'-----------------------------------\n',
+                                f'Дата приёма: {registration_date_str}\n',
+                                ###################################################################
                                 reply_markup=go_to_main_menu_keyboard()
                             )
                             return ConversationHandler.END
