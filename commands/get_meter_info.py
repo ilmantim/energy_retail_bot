@@ -73,7 +73,10 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                 )
                 for device_num in range(len(response_bill["core_devices"])):
                     device_here, created = Device.objects.get_or_create(
-                        number_and_type_pu=f'счётчик {response_bill["core_devices"][device_num]["serial_number"]} на электроснабжение в подъезде',
+                        #number_and_type_pu=f'счётчик {response_bill["core_devices"][device_num]["serial_number"]}',
+                        device_title=f'{response_bill["core_devices"][device_num]["device_title"]}',
+                        modification=f'{response_bill["core_devices"][device_num]["modification"]}',
+                        serial_number=f'{response_bill["core_devices"][device_num]["serial_number"]}',
                         id_device=response_bill["core_devices"][device_num][
                             "id_meter"],
                         bill=bill_here
@@ -163,21 +166,30 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                         )
                         readings_str = str(
                             rate_here.readings) + ' квт*ч' if rate_here.readings is not None else "Показания не указаны"
-                        number_and_type_pu_str = device_here.number_and_type_pu if device_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+                       # number_and_type_pu_str = device_here.number_and_type_pu if device_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+                        device_title = device_here.device_title
+                        modification = device_here.modification
+                        serial_number = device_here.serial_number
+                        
                         if not device_here == bill_here.devices.last() or not rate_here == device_here.rates.last():
                             context.bot.send_message(
                                 chat_id=update.effective_chat.id,
-                                text=f'Лицевой счет: {bill_here.value}\n'
-                                     f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                                     f'Показания: {readings_str}\n'
-                                     f'Дата приёма: {registration_date_str}\n'
+                                text=f'- Лицевой счет: {bill_here.value}\n'
+                                    # f'- Номер и тип ПУ: {number_and_type_pu_str}\n'
+                                     f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
+                                     f'- Номер счетчика: {serial_number}\n'
+                                     f'- Дата поверки: {readings_str}\n'
+                                     f'- Показания: {readings_str}\n'
+                                     f'- Дата приёма: {registration_date_str}\n'
                             )
                         else:
                             update.message.reply_text(
-                                f'Лицевой счет: {bill_here.value}\n'
-                                f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                                f'Показания: {readings_str}\n'
-                                f'Дата приёма: {registration_date_str}\n',
+                                f'- Лицевой счет: {bill_here.value}\n'
+                                #f'- Номер и тип ПУ: {number_and_type_pu_str}\n'
+                                f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
+                                f'- Номер счетчика: {serial_number}\n'
+                                f'- Показания: {readings_str}\n'
+                                f'- Дата приёма: {registration_date_str}\n',
                                 reply_markup=go_to_main_menu_keyboard()
                             )
                             return ConversationHandler.END
@@ -187,8 +199,8 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                 message = f'Адрес объекта - {device_here.address}?'
                 update.message.reply_text(message,
                                           reply_markup=yes_or_no_keyboard())
+     
                 return YES_OR_NO_ADDRESS
-
     except Exception as e:
         logger.info(f'Exception occurred:{e}')
 
