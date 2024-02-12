@@ -19,6 +19,7 @@ MAIN_MENU, SUBMIT_READINGS, INPUT_READINGS, YES_OR_NO_ADDRESS, METER_INFO,\
 
 
 def yes_or_no_address(update: Update, context: CallbackContext) -> int:
+    logger.info("yes_or_no_address")
     text = update.message.text
     if text.lower() == 'нет':
         context.bot.send_message(
