@@ -164,10 +164,14 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                             rate_here.registration_date = None
                         rate_here.save()
                     device_here.address = (
+                        f'{response_bill["core_devices"][device_num]["type_locality"]}. '
                         f'{response_bill["core_devices"][device_num]["locality"]} '
+                        f'{response_bill["core_devices"][device_num]["type_street"]}. '
                         f'{response_bill["core_devices"][device_num]["street"]} '
                         f'{response_bill["core_devices"][device_num]["type_house"]} '
                         f'{response_bill["core_devices"][device_num]["house"]} '
+                        f'{response_bill["core_devices"][device_num]["type_building"]} '
+                        f'{response_bill["core_devices"][device_num]["building"]} '
                         f'{response_bill["core_devices"][device_num]["condos_types"]} '
                         f'{response_bill["core_devices"][device_num]["condos_number"]} ')
                     device_here.save()
