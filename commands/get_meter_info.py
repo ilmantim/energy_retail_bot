@@ -73,7 +73,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                 )
                 for device_num in range(len(response_bill["core_devices"])):
                     device_here, created = Device.objects.get_or_create(
-                        number_and_type_pu=f'счётчик {response_bill["core_devices"][device_num]["serial_number"]} на электроснабжение в подъезде',
+                        number_and_type_pu=f'счётчик {response_bill["core_devices"][device_num]["serial_number"]}',
                         id_device=response_bill["core_devices"][device_num][
                             "id_meter"],
                         bill=bill_here
