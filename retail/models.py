@@ -93,6 +93,11 @@ class Device(models.Model):
         null=True,
         blank=True
     )
+    device_title = models.TextField(
+        'Прибор учета',
+        null=True,
+        blank=True
+    )
     number_and_type_pu = models.TextField(
         'Номер и тип ПУ',
         null=True,

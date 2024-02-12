@@ -52,10 +52,12 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
                     readings_str = str(
                         rate_here.readings) + ' квт*ч' if rate_here.readings is not None else "Показания не указаны"
                     number_and_type_pu_str = device_here.number_and_type_pu if device_here.number_and_type_pu else "Номер и тип ПУ не указаны"
+                    device_title=device_here.device_title
                     if not device_here == bill_here.devices.last() or not rate_here == device_here.rates.last():
                         context.bot.send_message(
                             chat_id=update.effective_chat.id,
                             text=f'Лицевой счет: {bill_here.value}\n'
+                                 f'- Прибор учета: {device_title})\n'
                                  f'Номер и тип ПУ: {number_and_type_pu_str}\n'
                                  f'Показания: {readings_str}\n'
                                  f'Дата приёма: {registration_date_str}\n'
@@ -63,6 +65,7 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
                     else:
                         update.message.reply_text(
                             f'Лицевой счет: {bill_here.value}\n'
+                            f'- Прибор учета: {device_title}\n'
                             f'Номер и тип ПУ: {number_and_type_pu_str}\n'
                             f'Показания: {readings_str}\n'
                             f'Дата приёма: {registration_date_str}\n',
