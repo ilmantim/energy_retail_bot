@@ -98,6 +98,16 @@ class Device(models.Model):
         null=True,
         blank=True
     )
+    modification = models.TextField(
+        'Модификация прибора учета',
+        null=True,
+        blank=True
+    )
+    serial_number = models.TextField(
+        'Серийный номер прибора учета',
+        null=True,
+        blank=True
+    )
     number_and_type_pu = models.TextField(
         'Номер и тип ПУ',
         null=True,
