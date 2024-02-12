@@ -24,7 +24,7 @@ def before_input_readings(update: Update, context: CallbackContext) -> int:
         rate_here = Rate.objects.get(id=context.user_data['rates_ids'][0])
 
         registration_date_str = rate_here.registration_date.strftime(
-            "%Y-%m-%d") if rate_here.registration_date else "Не указана"
+            "%d.%m.%Y") if rate_here.registration_date else "Не указана"
         readings_str = f'{rate_here.readings} квт*ч' if rate_here.readings is not None else "Не указаны"
         number_and_type_pu_str = rate_here.device.number_and_type_pu if rate_here.device.number_and_type_pu else "Не указаны"
 

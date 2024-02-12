@@ -158,7 +158,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                     rates = device_here.rates.all()
                     for rate_here in rates:
                         registration_date_str = (
-                            rate_here.registration_date.date().strftime("%Y-%m-%d")
+                            rate_here.registration_date.date().strftime("%d.%m.%Y")
                             if rate_here.registration_date else "Дата не указана"
                         )
                         readings_str = str(
