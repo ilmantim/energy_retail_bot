@@ -115,8 +115,12 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                 )
                 for device_num in range(len(response_bill["core_devices"])):
                     device_here, created = Device.objects.get_or_create(
-                        number_and_type_pu=f'счётчик {response_bill["core_devices"][device_num]["serial_number"]} на электроснабжение в подъезде',
-                        id_device=response_bill["core_devices"][device_num]["id_meter"],
+                        device_title=f'{response_bill["core_devices"][device_num]["device_title"]}',
+                        modification=f'{response_bill["core_devices"][device_num]["modification"]}',
+                        number_and_type_pu=f'{response_bill["core_devices"][device_num]["serial_number"]}',
+                        serial_number=f'{response_bill["core_devices"][device_num]["serial_number"]}',
+                        id_device=response_bill["core_devices"][device_num][
+                            "id_meter"],
                         bill=bill_here
                     )
 
@@ -133,7 +137,10 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                             defaults={
                                 'id_indication':
                                     response_bill["core_devices"][device_num][
-                                        "rates"][rate_num]["id_indication"]
+                                        "rates"][rate_num]["id_indication"],
+                                'cost':
+                                    response_bill["core_devices"][device_num][
+                                        "rates"][rate_num]["cost"]
                             }
                         )
                         context.user_data['rate'] = rate_here.id

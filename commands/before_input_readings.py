@@ -22,18 +22,21 @@ def before_input_readings(update: Update, context: CallbackContext) -> int:
 
     if context.user_data['prev_step'] == 'fav' or text.isdigit():
         rate_here = Rate.objects.get(id=context.user_data['rates_ids'][0])
-
-        registration_date_str = rate_here.registration_date.strftime(
-            "%d.%m.%Y") if rate_here.registration_date else "Не указана"
+        device_here = rate_here.device
+        bill_here = device_here.bill
+        device_title = device_here.device_title
+        modification = device_here.modification
+        serial_number = device_here.serial_number
         readings_str = f'{rate_here.readings} квт*ч' if rate_here.readings is not None else "Не указаны"
-        number_and_type_pu_str = rate_here.device.number_and_type_pu if rate_here.device.number_and_type_pu else "Не указаны"
-
         message = (
-            f'Лицевой счет: {rate_here.device.bill.value}\n'
-            f'Номер и тип ПУ: {number_and_type_pu_str} {rate_here.title}\n'
-            f'Показания: {readings_str}\n'
-            f'Дата приёма: {registration_date_str}\n'
-            'Введите новые показания:'
+            f'📋 Информация о лицевом счете:\n'
+            f'-----------------------------------\n'
+            f'- Лицевой счет: {bill_here.value}\n'
+            f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
+            f'- Последнее показание: {readings_str}\n'
+            f'- Тариф: {rate_here.cost}\n'
+            f'-----------------------------------\n'
+            f'Введите показание:'
         )
         update.message.reply_text(
             message,

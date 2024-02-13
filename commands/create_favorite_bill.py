@@ -43,54 +43,27 @@ def create_favorite_bill(update: Update, context: CallbackContext) -> int:
         elif context.user_data['prev_step'] == 'meter':
             devices = bill_here.devices.all()
             for device_here in devices:
+                device_title = device_here.device_title
+                modification = device_here.modification
+                serial_number = device_here.serial_number
                 rates = device_here.rates.all()
+                rates_of_device = {}
                 for rate_here in rates:
-                    registration_date_str = (
-                        rate_here.registration_date.date().strftime("%d.%m.%Y")
-                        if rate_here.registration_date else "Дата не указана"
-                    )
-                    readings_str = str(
-                        rate_here.readings) + ' квт*ч' if rate_here.readings is not None else "Показания не указаны"
-                    number_and_type_pu_str = device_here.number_and_type_pu if device_here.number_and_type_pu else "Номер и тип ПУ не указаны"
-                    device_title=device_here.device_title
-                    modification=device_here.modification
-                    serial_number=device_here.serial_number
-                    
-                    if not device_here == bill_here.devices.last() or not rate_here == device_here.rates.last():
-                        context.bot.send_message(
-                            chat_id=update.effective_chat.id,
-                            text=f'📟 Информация о приборе учета:\n'
-                                 f'-----------------------------------\n'
-                                 f'- Лицевой счет: {bill_here.value}\n'
-                                 f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
-                                 f'- Номер счетчика: {serial_number}\n'
-                                 f'- Величина тарифа: \n'
-                                 #f'  - {rate_here.title}:{rate_here_cost} ₽\n'
-                                 f'-----------------------------------\n'
-                                 #######ЭТОТ ТУТ НЕ НУЖНО, ОТСАВИЛ, ЧТОБЫ НЕ СЛОМАТЬ КОД#########
-                                 f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                                 f'Показания: {readings_str}\n'
-                                 f'Дата приёма: {registration_date_str}\n'
-                                 ###################################################################
-                        )
-                    else:
-                        update.message.reply_text(
-                            f'📟 Информация о приборе учета:\n'
-                            f'-----------------------------------\n'
-                            f'- Лицевой счет: {bill_here.value}\n'
-                            f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
-                            f'- Номер счетчика: {serial_number}\n'
-                            f'- Величина тарифа: \n'
-                            #f'  - {rate_here.title}:{rate_here_cost} ₽\n'
-                            f'-----------------------------------\n'
-                            #######ЭТОТ ТУТ НЕ НУЖНО, ОТСАВИЛ, ЧТОБЫ НЕ СЛОМАТЬ КОД#########
-                            f'Номер и тип ПУ: {number_and_type_pu_str}\n'
-                            f'Показания: {readings_str}\n'
-                            f'Дата приёма: {registration_date_str}\n',
-                            ###################################################################
-                            reply_markup=go_to_main_menu_keyboard()
-                        )
-                        return ConversationHandler.END
+                    rates_of_device[rate_here.title] = rate_here.cost
+                rate_info = "- Величина тарифа:\n"
+                for rate_key, rate_value in rates_of_device.items():
+                    rate_info += f"  - {rate_key}: {rate_value}₽\n"
+                update.message.reply_text(
+                    f'📟 Информация о приборе учета:\n'
+                    f'-----------------------------------\n'
+                    f'- Лицевой счет: {bill_here.value}\n'
+                    f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
+                    f'- Номер счетчика: {serial_number}\n'
+                    f'{rate_info}'
+                    f'-----------------------------------\n',
+                    reply_markup=go_to_main_menu_keyboard()
+                )
+                return ConversationHandler.END
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,

@@ -161,3 +161,8 @@ class Rate(models.Model):
         on_delete=models.CASCADE,
         related_name='rates'
     )
+    cost = models.FloatField(
+        'Стоимость',
+        null=True,
+        blank=True
+    )
