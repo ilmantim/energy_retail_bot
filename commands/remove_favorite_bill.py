@@ -30,13 +30,13 @@ def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
         context.user_data['bills_count'] = user.favorites.count()
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text='Личный счет удален из вашего списка.'
+            text='Лицевой счет удален из вашего списка.'
         )
         if user.favorites.count() > 0:
             bills = True
         else:
             bills = False
-        update.message.reply_text("Выберите раздел",
+        update.message.reply_text("Главное меню. Выберите раздел",
                                   reply_markup=main_menu_keyboard(bills))
         return MAIN_MENU
     elif text == 'Назад':
@@ -48,7 +48,7 @@ def remove_favorite_bill(update: Update, context: CallbackContext) -> int:
         return REMOVE_FAVORITE_BILLS
     elif text == 'Главное меню':
         return handle_start(update, context)
-    elif text == "Удалить лицевой счёт":
+    elif text == "Удалить ЛС из избранного":
         context.user_data['prev_step'] = 'delete'
         user, is_found = Customer.objects.get_or_create(
             chat_id=update.effective_chat.id

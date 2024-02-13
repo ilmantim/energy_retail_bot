@@ -28,14 +28,14 @@ def go_to_main_menu_keyboard():
 def main_menu_keyboard(bills=False):
     if not bills:
         info = [
-            ["Передать показания счётчиков"],
-            ["Приборы учёта"],
+            ["Передать показания"],
+            ["Информация по прибору учета"],
             ["Контакты и режим работы"]
         ]
     else:
         info = [
-            ["Передать показания счётчиков"],
-            ["Приборы учёта"],
+            ["Передать показания"],
+            ["Информация по прибору учета"],
             ["Мои лицевые счета"],
             ["Контакты и режим работы"]
         ]
@@ -88,7 +88,7 @@ def submit_readings_and_get_meter_with_bills_keyboard():
 
 def show_bills_keyboard():
     return ReplyKeyboardMarkup([
-        ["Удалить лицевой счёт"],
+        ["Удалить ЛС из избранного"],
         ["Главное меню"]
     ],
         resize_keyboard=True,

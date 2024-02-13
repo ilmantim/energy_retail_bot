@@ -32,12 +32,12 @@ def check_user_bills(user) -> bool:
 def send_start_message(update: Update, has_bills: bool = False):
     if has_bills:
         update.message.reply_text(
-            "Выберите раздел",
+            "Главное меню. Выберите раздел",
             reply_markup=main_menu_keyboard(True)
         )
     else:
         update.message.reply_text(
-            "Выберите раздел",
+            "Главное меню. Выберите раздел",
             reply_markup=main_menu_keyboard()
         )
 

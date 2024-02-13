@@ -53,7 +53,7 @@ def update_main_menu(update: Update, context: CallbackContext, user: Customer) -
     else:
         bills = False
     update.message.reply_text(
-        "Выберите раздел",
+        "Главное меню. Выберите раздел",
         reply_markup=main_menu_keyboard(bills)
     )
     return MAIN_MENU
@@ -66,10 +66,10 @@ def handle_main_menu(update: Update, context: CallbackContext) -> int:
 
     if text == "Мои лицевые счета" and user.favorites.count() > 0:
         return handle_my_accounts(update, context, user)
-    elif text == "Передать показания счётчиков":
+    elif text == "Передать показания":
         context.user_data['prev_step'] = 'main'
         return submit_readings(update, context)
-    elif text == "Приборы учёта":
+    elif text == "Информация по прибору учета":
         return get_meter_info(update, context)
     elif text == "Контакты и режим работы":
         return get_contact_info(update, context)

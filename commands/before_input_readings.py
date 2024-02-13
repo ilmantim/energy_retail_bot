@@ -28,11 +28,14 @@ def before_input_readings(update: Update, context: CallbackContext) -> int:
         modification = device_here.modification
         serial_number = device_here.serial_number
         readings_str = f'{rate_here.readings} квт*ч' if rate_here.readings is not None else "Не указаны"
+        registration_date_str = rate_here.registration_date.strftime(
+            "%d.%m.%Y") if rate_here.registration_date else "Не указана"
         message = (
-            f'📋 Информация о лицевом счете:\n'
+            f'📋 Информация о лицевом счете:\n' 
             f'-----------------------------------\n'
             f'- Лицевой счет: {bill_here.value}\n'
-            f'- Прибор учета: {device_title} - {modification} (№{serial_number})\n'
+            f'- Номер и тип прибора учета: {device_title} - {modification} (№{serial_number})\n'
+            f'- Дата передачи последнего показания: {registration_date_str}\n'
             f'- Последнее показание: {readings_str}\n'
             f'- Тариф: {rate_here.cost}\n'
             f'-----------------------------------\n'

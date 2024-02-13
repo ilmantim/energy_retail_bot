@@ -36,7 +36,7 @@ MOSCOW_TIMEZONE_OFFSET = 180
 
 
 def submit_readings(update: Update, context: CallbackContext) -> int:
-    logger.info("Передать показания счётчиков")
+    logger.info("Передать показания")
     text = update.message.text
 
     if text == MAIN_MENU_COMMAND:
@@ -239,7 +239,7 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
 def digit_checker(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     user = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
-    if text in [GET_BILL_INFO_COMMAND, MAIN_MENU_COMMAND, 'Ввести другой', 'Передать показания счётчиков']:
+    if text in [GET_BILL_INFO_COMMAND, MAIN_MENU_COMMAND, 'Ввести другой', 'Передать показания']:
         return SUBMIT_READINGS
     elif text.isdigit() and user.favorites.filter(bill__value=int(text)).exists():
         return SUBMIT_READINGS

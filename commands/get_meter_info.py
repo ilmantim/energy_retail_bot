@@ -23,7 +23,7 @@ MOSCOW_TIMEZONE_OFFSET = 180
 
 
 def get_meter_info(update: Update, context: CallbackContext) -> int:
-    logger.info("Приборы учёта")
+    logger.info("Информация по прибору учета")
     text = update.message.text
 
     if text == MAIN_MENU_COMMAND:
@@ -215,7 +215,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
 def digit_checker(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     user = Customer.objects.get(chat_id=int(context.user_data['chat_id']))
-    if text in [GET_BILL_INFO_COMMAND, MAIN_MENU_COMMAND, 'Ввести другой', 'Приборы учёта']:
+    if text in [GET_BILL_INFO_COMMAND, MAIN_MENU_COMMAND, 'Ввести другой', 'Информация по прибору учета']:
         return METER_INFO
     elif text.isdigit() and user.favorites.filter(bill__value=int(text)).exists():
         return METER_INFO
