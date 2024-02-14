@@ -10,7 +10,6 @@ from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, submit_readin
 from commands.start import handle_start
 from django.utils import timezone
 
-from datetime import timedelta
 
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
