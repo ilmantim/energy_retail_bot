@@ -10,6 +10,8 @@ from keyboard import yes_or_no_keyboard, go_to_main_menu_keyboard, submit_readin
 from commands.start import handle_start
 from django.utils import timezone
 
+from datetime import timedelta
+
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -105,7 +107,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
                         context.user_data['rate'] = rate_here.id
                         readings = \
                             response_bill["core_devices"][device_num]["rates"][
-                                rate_num]["current_month_reading_value"]
+                                rate_num]["reading"]
                         if readings:
                             rate_here.readings = int(
                                 round(float(readings)))
@@ -114,7 +116,7 @@ def process_meter_info(update: Update, context: CallbackContext) -> int:
 
                         date = \
                         response_bill["core_devices"][device_num]["rates"][
-                            rate_num]["current_month_reading_date"]
+                            rate_num]["date_reading"]
                         if date:
                             moscow_timezone = timezone.get_fixed_timezone(180)
                             try:

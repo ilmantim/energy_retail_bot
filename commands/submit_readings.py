@@ -146,7 +146,7 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                         context.user_data['rate'] = rate_here.id
                         readings = \
                             response_bill["core_devices"][device_num]["rates"][
-                                rate_num]["current_month_reading_value"]
+                                rate_num]["reading"]
                         if readings:
                             rate_here.readings = int(
                                 round(float(readings)))
@@ -154,7 +154,7 @@ def process_reading_submission(update: Update, context: CallbackContext) -> int:
                             rate_here.readings = None
 
                         date = response_bill["core_devices"][device_num]["rates"][
-                            rate_num]["current_month_reading_date"]
+                            rate_num]["date_reading"]
                         if date:
                             moscow_timezone = timezone.get_fixed_timezone(180)
                             try:
