@@ -7,6 +7,8 @@ from retail.models import Rate
 from keyboard import go_to_main_menu_keyboard
 from commands.start import handle_start
 
+from datetime import timedelta
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -28,8 +30,16 @@ def before_input_readings(update: Update, context: CallbackContext) -> int:
         modification = device_here.modification
         serial_number = device_here.serial_number
         readings_str = f'{rate_here.readings} квт*ч' if rate_here.readings is not None else "Не указаны"
-        registration_date_str = rate_here.registration_date.strftime(
-            "%d.%m.%Y") if rate_here.registration_date else "Не указана"
+        if rate_here.registration_date:
+            # Add one day to the registration_date
+            adjusted_date = rate_here.registration_date + timedelta(days=1)
+            # Convert the adjusted date to a string in the desired format
+            registration_date_str = adjusted_date.strftime("%d.%m.%Y")
+        else:
+            registration_date_str = "Не указана"
+
+        #registration_date_str = rate_here.registration_date.strftime(
+        #    "%d.%m.%Y") if rate_here.registration_date else "Не указана"
         message = (
             f'📋 Информация о лицевом счете:\n' 
             f'-----------------------------------\n'
